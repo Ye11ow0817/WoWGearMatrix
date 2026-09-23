@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build-wasm/
+engine/simc-source/
+
+.env
+.env.*
+!.env.example
+*.log

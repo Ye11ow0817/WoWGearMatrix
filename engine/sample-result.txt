@@ -1,0 +1,235 @@
+SimC Gear Resolver 0.1 | SimC 1210-01
+Data: 12.1.0.69814
+Source: ac0f3a3c7ff9e521137c0ca1760d548330c697f3
+Character: Yellowwar | warrior/arms | level=90
+Export: 12.1.0.69814, TOC 120100
+Scope: item base stats + fixed gem/enchant stats. No combat, talents, set bonuses or proc averages.
+
+[1] equipped / head / 翡翠督军的淬火战角
+id=271456 | Tempered Horns of the Jade Warlord | ilevel=321
+base: stamina=3369, strint=167, crit_rating=58, haste_rating=133, armor=299
+gems: (none)
+enchant: avoidance_rating=37
+socket_bonus: (none)
+total_for_spec: strength=167, stamina=3369, crit_rating=58, haste_rating=133, avoidance_rating=37, armor=299
+
+[2] equipped / neck / 冲锋巨熊项圈
+id=251173 | Yoke of the Charging Bear | ilevel=311
+base: stamina=1689, crit_rating=121, haste_rating=232, speed_rating=61
+gems: stragiint=32
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=32, stamina=1689, crit_rating=121, haste_rating=232, speed_rating=61
+
+[3] equipped / shoulder / 翡翠督军的狂怒肩铠
+id=271454 | Raging Pauldrons of the Jade Warlord | ilevel=321
+base: stamina=2527, strint=125, crit_rating=47, haste_rating=96, armor=274
+gems: (none)
+enchant: avoidance_rating=111
+socket_bonus: (none)
+total_for_spec: strength=125, stamina=2527, crit_rating=47, haste_rating=96, avoidance_rating=111, armor=274
+
+[4] equipped / back / 丝质巫毒斗篷
+id=268253 | Silken Voodoo Drape | ilevel=334
+base: stamina=2199, stragiint=106, haste_rating=33, mastery_rating=80, armor=78
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=106, stamina=2199, haste_rating=33, mastery_rating=80, armor=78
+
+[5] equipped / chest / 翡翠督军胸铠
+id=271459 | Cuirass of the Jade Warlord | ilevel=311
+base: stamina=3002, strint=152, crit_rating=72, mastery_rating=111, armor=373
+gems: (none)
+enchant: stragiint=50
+socket_bonus: (none)
+total_for_spec: strength=202, stamina=3002, crit_rating=72, mastery_rating=111, armor=373
+
+[6] equipped / shirt / 闪闪的项圈
+id=268274 | Blinky's Collar | ilevel=1
+base: (none)
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: (none)
+effect: spell_id=1282029 trigger=1 (not included in fixed stats)
+
+[7] equipped / wrist / 破法者的护腕
+id=237834 | Spellbreaker's Bracers | ilevel=331
+base: stamina=2124, strint=103, crit_rating=56, haste_rating=56, armor=213
+gems: crit_rating=7, haste_rating=16
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=103, stamina=2124, crit_rating=63, haste_rating=72, armor=213
+effect: spell_id=1283697 trigger=1 (not included in fixed stats)
+
+[8] equipped / hands / 翡翠督军的镶玉护手
+id=271457 | Jeweled Gauntlets of the Jade Warlord | ilevel=321
+base: stamina=2527, strint=125, crit_rating=56, haste_rating=87, armor=224
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=125, stamina=2527, crit_rating=56, haste_rating=87, armor=224
+
+[9] equipped / waist / 致命净化束腰
+id=159418 | Girdle of Pestilent Purification | ilevel=311
+base: stamina=2252, strint=114, haste_rating=86, mastery_rating=51, armor=210
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=114, stamina=2252, haste_rating=86, mastery_rating=51, armor=210
+
+[10] equipped / legs / 磐石马裤
+id=251182 | Bedrock Breeches | ilevel=311
+base: stamina=3002, strint=152, crit_rating=111, versatility_rating=72, armor=326
+gems: (none)
+enchant: stragi=41, bonus_armor=27
+socket_bonus: (none)
+total_for_spec: strength=193, stamina=3002, crit_rating=111, versatility_rating=72, armor=326, bonus_armor=27
+
+[11] equipped / feet / 金泥践踏者
+id=159412 | Auric Puddle Stompers | ilevel=311
+base: stamina=2252, strint=114, crit_rating=57, versatility_rating=80, armor=233
+gems: (none)
+enchant: stamina=232, avoidance_rating=19
+socket_bonus: (none)
+total_for_spec: strength=114, stamina=2484, crit_rating=57, versatility_rating=80, avoidance_rating=19, armor=233
+
+[12] equipped / finger1 / 翠玉盘蛇指环
+id=162544 | Jade Ophidian Band | ilevel=321
+base: stamina=1895, mastery_rating=236, versatility_rating=140
+gems: crit_rating=7, haste_rating=16
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: stamina=1895, crit_rating=7, haste_rating=16, mastery_rating=236, versatility_rating=140
+passive gem/enchant effect: eyes_of_the_eagle spell_id=1236701 (not added to rating totals)
+  critical_damage_bonus=2%
+  critical_healing_bonus=2%
+
+[13] equipped / finger2 / 充能沙石指环
+id=158366 | Charged Sandstone Band | ilevel=321
+base: stamina=1895, crit_rating=215, mastery_rating=161
+gems: crit_rating=7, haste_rating=16
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: stamina=1895, crit_rating=222, haste_rating=16, mastery_rating=161
+passive gem/enchant effect: eyes_of_the_eagle spell_id=1236701 (not added to rating totals)
+  critical_damage_bonus=2%
+  critical_healing_bonus=2%
+
+[14] equipped / trinket1 / 祖尔金的处斩技法
+id=270173 | Zul'jin's Guillotine Technique | ilevel=334
+base: stragi=179
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=179
+effect: spell_id=1291728 trigger=1 (not included in fixed stats)
+
+[15] equipped / trinket2 / 一瓶肮脏的烈性毒液
+id=273796 | Vile Vial of Volatile Venom | ilevel=321
+base: stragiint=159
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=159
+effect: spell_id=1293316 trigger=0 (not included in fixed stats)
+effect: spell_id=1295179 trigger=1 (not included in fixed stats)
+
+[16] equipped / main_hand / 血骑士的战剑
+id=237846 | Blood Knight's Warblade | ilevel=331
+base: strength=183, stamina=3777, crit_rating=99, haste_rating=99
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=183, stamina=3777, crit_rating=99, haste_rating=99
+weapon: sword2h_3.60speed_372min_621max
+effect: spell_id=1297382 trigger=1 (not included in fixed stats)
+passive gem/enchant effect: rite_of_the_hashey spell_id=1297652 (not added to rating totals)
+  effect_type=6 aura_type=285 raw_base_value=0 (not flattened)
+
+[17] Gear from Bags / head / 掠食者面甲
+id=251229 | Visor of the Predator | ilevel=311
+base: stamina=3002, strint=152, crit_rating=118, mastery_rating=64, armor=280
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=152, stamina=3002, crit_rating=118, mastery_rating=64, armor=280
+
+[18] Gear from Bags / neck / 护卫之牙束带
+id=273781 | Strand of Warding Fangs | ilevel=311
+base: stamina=1689, crit_rating=201, haste_rating=152
+gems: stragiint=32
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=32, stamina=1689, crit_rating=201, haste_rating=152
+
+[19] Gear from Bags / back / 防火斗披
+id=193763 | Fireproof Drape | ilevel=321
+base: stamina=1895, stragiint=94, crit_rating=40, haste_rating=67, armor=72
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=94, stamina=1895, crit_rating=40, haste_rating=67, armor=72
+
+[20] Gear from Bags / waist / 钢皮束带
+id=257017 | Steelbark Girdle | ilevel=279
+base: stamina=1545, strint=85, haste_rating=66, versatility_rating=51, armor=173
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=85, stamina=1545, haste_rating=66, versatility_rating=51, armor=173
+
+[21] Gear from Bags / feet / 邪能浸透之靴
+id=251125 | Felsoaked Soles | ilevel=298
+base: stamina=1935, agiint=101, crit_rating=45, versatility_rating=84, armor=143
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: stamina=1935, crit_rating=45, versatility_rating=84, armor=143
+
+[22] Gear from Bags / trinket1 / 原始点金石
+id=241291 | Primal Philosopher's Stone | ilevel=165
+base: strength=37, agility=37, intellect=37, versatility_rating=64
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=37, agility=37, intellect=37, versatility_rating=64
+
+[23] Gear from Bags / trinket1 / 盘卷牙石
+id=273795 | Coiled Fangstone | ilevel=321
+base: strength=159, avoidance_rating=61
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=159, avoidance_rating=61
+effect: spell_id=1293311 trigger=0 (not included in fixed stats)
+effect: spell_id=1295491 trigger=1 (not included in fixed stats)
+
+[24] Gear from Bags / trinket1 / 共鸣咆哮石
+id=250228 | Resonant Bellowstone | ilevel=311
+base: stragi=145
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=145
+effect: spell_id=1250564 trigger=1 (not included in fixed stats)
+
+[25] Gear from Bags / main_hand / 褪色的晨光切斧
+id=258946 | Tarnished Dawnlit Chopper | ilevel=282
+base: strength=58, stamina=1071, mastery_rating=36, versatility_rating=43
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=58, stamina=1071, mastery_rating=36, versatility_rating=43
+weapon: axe_2.60speed_111min_232max
+
+[26] Gear from Bags / off_hand / 破法者之盾
+id=251105 | Ward of the Spellbreaker | ilevel=276
+base: strength=55, stamina=987, intellect=168, crit_rating=32, mastery_rating=45, armor=883
+gems: (none)
+enchant: (none)
+socket_bonus: (none)
+total_for_spec: strength=55, stamina=987, intellect=168, crit_rating=32, mastery_rating=45, armor=883
+
+Summary: total=26 resolved=26 failed=0 ilevel_mismatches=0

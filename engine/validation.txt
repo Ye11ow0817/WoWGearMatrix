@@ -1,0 +1,11 @@
+PASS sample: all 26 items, correct slots and all item levels match
+PASS same item ID with different bonuses remains two separate candidates
+PASS removing gem and enchant leaves base stats unchanged
+PASS unknown item fails explicitly and does not prevent valid items
+PASS unknown bonus cannot silently become base item
+PASS unsupported item option is rejected
+PASS bad input returns a nonzero status
+PASS different export version produces an explicit warning
+PASS UTF-8 BOM, CRLF and Unicode file paths
+
+9 tests passed.

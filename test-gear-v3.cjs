@@ -1,0 +1,24 @@
+const assert=require('node:assert/strict'),M=require('./model.js');
+const state=M.newState(),c=state.characters[0];
+const item=(slot,extra={})=>({id:M.id(),name:'测试',slot,origin:'custom',selected:true,ilevel:300,mainType:'strength',stats:Object.fromEntries(M.itemStats.map(([k])=>[k,0])),socket:false,embellishment:false,set:false,...extra});
+const a=item('finger',{selected:false}),b=item('finger'),d=item('finger');c.items.push(a,b,d);
+M.toggleLock(c,a);assert(a.selected);assert.equal(M.combinationCount(c).total,2n);assert.throws(()=>M.toggleSelected(a));
+M.toggleLock(c,b);assert.equal(M.combinationCount(c).total,1n);assert.throws(()=>M.toggleLock(c,d));
+const restored=M.validateState(JSON.parse(JSON.stringify(state))).characters[0];assert.equal(restored.items.filter(i=>i.locked).length,2);assert.equal(M.combinationCount(restored).total,1n);
+const trinkets=[item('trinket'),item('trinket'),item('trinket')];c.items.push(...trinkets);M.toggleLock(c,trinkets[0]);M.toggleLock(c,trinkets[1]);assert.equal(M.combinationCount(c).total,1n);
+const enchants=c.items.filter(i=>i.slot==='enchant'&&i.enchantSlot==='finger').slice(0,2);enchants.forEach(i=>i.selected=true);assert.equal(M.combinationCount(c).total,4n);
+const extra=c.items.find(i=>i.slot==='enchant'&&i.enchantSlot==='head');extra.selected=true;assert.equal(M.combinationCount(c).total,4n);
+assert.equal(M.enchantChoices(c,item('finger',{ilevel:100})),1n);
+assert.equal(M.enchantChoices(c,item('off_hand',{weaponType:'none'})),1n);
+const gems=M.newCharacter();gems.items.push(item('head',{socket:true,socketCount:4}));assert.equal(M.combinationCount(gems).total,1n);
+const gem=gems.items.find(i=>i.presetId==='240888');gem.selected=true;assert.equal(M.combinationCount(gems).total,1n);
+gem.selected=false;gems.items.find(i=>i.presetId==='240983').selected=true;assert.equal(M.combinationCount(gems).total,0n);assert(M.combinationCount(gems).missing.length);
+const values=item('head',{stats:{armor:300,stamina:1000,main:123,crit:20,haste:80,mastery:30,versatility:10,avoidance:5,leech:6,speed:7}});
+assert.deepEqual(M.displayStats(values).map(([k])=>k),['armor','stamina','main','haste','mastery','crit','versatility','avoidance','leech','speed']);
+const parsed=M.parseReport('Character: Test | warrior/arms | level=90\n[1] equipped / head / Head\nid=1 | Head | ilevel=300\nbase_for_spec: strength=10, stamina=200, armor=50, bonus_armor=5, avoidance_rating=3, leech_rating=4, speed_rating=5\ngear_flags: sockets=4, set_id=0, embellishment=0\n');assert.equal(parsed.items[0].stats.armor,55);assert.equal(parsed.items[0].stats.stamina,200);assert.equal(parsed.items[0].stats.avoidance,3);assert.equal(parsed.items[0].stats.leech,4);assert.equal(parsed.items[0].stats.speed,5);
+const imported=M.newCharacter();const ri=item('finger',{origin:'import',itemId:10,position:1}),ri2=item('finger',{origin:'import',itemId:11,position:2});const result={items:[ri,ri2],name:'test',mainType:'strength',attributeContext:{spec:'arms',level:90},skipped:0,failed:0};M.applyImport(imported,result,'');M.toggleLock(imported,imported.items[0]);M.applyImport(imported,{...result,items:result.items.map(i=>({...i,id:M.id()}))},'');assert(imported.items[0].locked);
+console.log('PASS: locks and persistence, import lock preservation, full sockets, enchant applicability/product, ordered 10 stats.');
+
+const mc=M.newCharacter();
+const er={...result,items:[{...ri,slot:'head',itemId:1}]};M.attachEquippedGems(er,'head=,id=1,enchant_id=7991');M.applyImport(mc,er,'');assert(mc.items.find(i=>i.enchantId===7991).selected);
+console.log('PASS: equipped enchant import defaults.');

@@ -1,0 +1,71 @@
+{
+  "name": "wowgearmatrix",
+  "version": "0.3.0",
+  "private": true,
+  "description": "WoWGearMatrix - 魔兽世界配装工具",
+  "license": "GPL-3.0-or-later",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test-combinations.cjs test-filter-defaults.cjs test-gear-v3.cjs test-gear-v4.cjs test-import-default.cjs test-model.cjs test-presets.cjs test-search.cjs test-selection.cjs test-slots.cjs",
+    "dist:win": "electron-builder --win portable --x64",
+    "postinstall": "node node_modules/electron/install.js"
+  },
+  "devDependencies": {
+    "electron": "44.3.0",
+    "electron-builder": "26.15.3"
+  },
+  "productName": "WoW配装",
+  "build": {
+    "appId": "local.wowgearmatrix",
+    "productName": "WoW配装",
+    "directories": {
+      "output": "dist"
+    },
+    "asar": true,
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "worker.cjs",
+      "storage.cjs",
+      "index.html",
+      "style.css",
+      "renderer.js",
+      "model.js",
+      "presets.js",
+      "search.js",
+      "search-ui.js",
+      "search-worker.js",
+      "engine/gear-resolver.js",
+      "engine/gear-resolver.wasm",
+      "engine/LICENSE",
+      "engine/COPYING",
+      "engine/manifest.json",
+      "node_modules/sortablejs/Sortable.min.js",
+      "node_modules/sortablejs/LICENSE"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "portable": {
+      "artifactName": "WoWGearMatrix-${version}-win-x64.exe"
+    },
+    "electronLanguages": [
+      "en-US"
+    ],
+    "npmRebuild": false,
+    "electronDist": "node_modules/electron/dist",
+    "executableName": "WoWGearMatrix"
+  },
+  "dependencies": {
+    "sortablejs": "1.15.7"
+  }
+}

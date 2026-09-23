@@ -1,0 +1,124 @@
+# Yellowwar - Arms - 2026-09-14 23:56 - CN/白银之手
+# SimC Addon 12.1.0-03
+# WoW 12.1.0.69814, TOC 120100
+# Requires SimulationCraft 1000-01 or newer
+
+warrior="Yellowwar"
+level=90
+race=night_elf
+region=cn
+server=白银之手
+role=attack
+professions=alchemy=100/
+spec=arms
+# loot_spec=arms
+
+talents=CcEASWsDSHNyPDXnbxuIhH3ZdDzMzsMz8AmZGAAAghphZGzMWmZmZGmxMDAAAAgZWmZgJMWWGYBMgZYCZGsBmZYsNwyMbDwMDAMMA
+
+# Saved Loadout: 屠戮 团本AOE
+# talents=CcEASWsDSHNyPDXnbxuIhH3ZdDzMzsMzYmZGAAAghxwYMzYZmZmZwYmBAAAAwYZmBGYssNwGYAzwAMD2AzM2GbDmlZ2GgZGAMDDA
+# Saved Loadout: 屠戮 大米
+# talents=CcEASWsDSHNyPDXnbxuIhH3ZdjZmZmFzYmZGAAAghxwYMzsZmZmZMzYmBAAAAwYZmBGYssNwCYAzwAMD2AzMMMYWmZbAmZAwMMA
+# Saved Loadout: 团本Ex
+# talents=CcEASWsDSHNyPDXnbxuIhH3ZdDzMzsMz8AmZGAAAghxwMjZGLzMzMDzYmBAAAAwMLzMwAjllBWADYGGgZwGYmhx2ALzsNAzMAwwA
+
+omnium_talents=136814:1/136821:1/136817:1/136816:1/136822:1
+
+# 翡翠督军的淬火战角 (321)
+head=,id=271456,enchant_id=8017,bonus_id=13334/6652/13696/13692/13698/12846,redirected_base_stats=268229
+# 冲锋巨熊项圈 (311)
+neck=,id=251173,gem_id=240983,bonus_id=12843/13440/42/13668/12699,content_tuning=1279
+# 翡翠督军的狂怒肩铠 (321)
+shoulder=,id=271454,enchant_id=8001,bonus_id=6652/13440/13694/13697/12846,redirected_base_stats=239037
+# 丝质巫毒斗篷 (334)
+back=,id=268253,bonus_id=6652/13662/13334/12854
+# 翡翠督军胸铠 (311)
+chest=,id=271459,enchant_id=7987,bonus_id=6652/12843/13440/13690/13698/1564,redirected_base_stats=239036
+# 闪闪的项圈 (1)
+shirt=,id=268274,content_tuning=3605
+# 破法者的护腕 (331)
+wrist=,id=237834,gem_id=240890,bonus_id=12214/13667/13695/12497/13751/14001/8960/12384/8790/13836/13696,content_tuning=3615,crafted_stats=40/32,crafting_quality=5
+# 翡翠督军的镶玉护手 (321)
+hands=,id=271457,bonus_id=6652/13440/13691/13697/12846,redirected_base_stats=251214
+# 致命净化束腰 (311)
+waist=,id=159418,bonus_id=12843/13440/6652/13696/13662/12699,content_tuning=1279
+# 磐石马裤 (311)
+legs=,id=251182,enchant_id=8163,bonus_id=12843/13440/6652/13662/12699,content_tuning=1279
+# 金泥践踏者 (311)
+feet=,id=159412,enchant_id=7963,bonus_id=12843/13440/6652/13662/12699,content_tuning=1279
+# 翠玉盘蛇指环 (321)
+finger1=,id=162544,enchant_id=7967,gem_id=240890,bonus_id=13440/6652/13668/12699/12846,content_tuning=1279
+# 充能沙石指环 (321)
+finger2=,id=158366,enchant_id=7967,gem_id=240890,bonus_id=13440/6652/13668/12699/12846,content_tuning=1279
+# 祖尔金的处斩技法 (334)
+trinket1=,id=270173,bonus_id=6652/13334/12854
+# 一瓶肮脏的烈性毒液 (321)
+trinket2=,id=273796,bonus_id=13440/6652/12699/12846,content_tuning=1279
+# 血骑士的战剑 (331)
+main_hand=,id=237846,enchant_id=8689,bonus_id=12214/13667/12497/13751/14004/13771/8960/8790/13836,content_tuning=3615,crafted_stats=36/32,crafting_quality=5
+
+### Gear from Bags
+#
+# 掠食者面甲 (311)
+# head=,id=251229,bonus_id=12843/13440/6652/13696/13662/12699,content_tuning=1279
+#
+# 护卫之牙束带 (311)
+# neck=,id=273781,gem_id=240983,bonus_id=12843/13440/6652/13668/12699,content_tuning=1279
+#
+# 防火斗披 (321)
+# back=,id=193763,bonus_id=13440/6652/13662/12699/12846,content_tuning=1279
+#
+# 钢皮束带 (279)
+# waist=,id=257017,bonus_id=12825/6652/13696/13662,content_tuning=7442
+#
+# 邪能浸透之靴 (298)
+# feet=,id=251125,bonus_id=12835/6652/13662/12699/11215,content_tuning=1279
+#
+# 原始点金石 (165)
+# trinket1=,id=241291,bonus_id=12249/12248/4785/12493,content_tuning=3615,crafting_quality=1
+#
+# 盘卷牙石 (321)
+# trinket1=,id=273795,bonus_id=13440/40/12699/12846,content_tuning=1279
+#
+# 共鸣咆哮石 (311)
+# trinket1=,id=250228,bonus_id=12843/13440/6652/12699,content_tuning=1279
+#
+# 褪色的晨光切斧 (282)
+# main_hand=,id=258946,bonus_id=6652/12822,content_tuning=5381
+#
+# 破法者之盾 (276)
+# off_hand=,id=251105,bonus_id=13440/6652/12699/12798,content_tuning=1279
+
+### Additional Character Info
+#
+# catalyst_currencies=2813:8/3269:8/3116:8/3378:8/3465:3
+#
+# upgrade_currencies=c:1792:6050/c:3442:301/c:3445:72/c:3443:275/c:3444:257/c:3446:130/i:256608:9/i:274476:1
+#
+# slot_high_watermarks=0:321:321/1:311:311/2:321:334/3:311:334/4:311:321/5:311:321/6:311:311/7:331:331/8:321:321/9:321:321/10:321:321/11:334:334/12:331:331/13:0:311/14:282:305/15:266:298/16:276:311
+#
+# upgrade_achievements=42767/42768/42769/42770/61809/62410/62411/62412
+#
+# bonus_roll_currencies=3418:1/3511:0
+#
+# bonus_roll_items=3418:278290:5:4:268253:71/3418:278290:5:4:270173:71
+
+
+# Saved Loadout: M1
+# talents=CcEASWsDSHNyPDXnbxuIhH3ZdDzMzsMz8AmZGAAAghZGmZMzstMzMzMYMzAAAAAYmlZGYGMWWGYBMgZYGkZwGYmhhBWmZbAmZAwMsC
+# Saved Loadout: M2
+# talents=CcEASWsDSHNyPDXnbxuIhH3ZdDzMzsMzYmZGAAAghZGGMzYZmZmZMzYmBAAAAwMLzMwMYssNwCYAzwMIzgNwMDjtBWmZbAmZAwMsC
+# Saved Loadout: M3
+# talents=CcEASWsDSHNyPDXnbxuIhH3ZdDzMzsMzYmZGAAAghZGmZMzYZmZmZwYmBAAAAwMLzMwMYssNwCYAzwMIzgNwMDjtBWmZbAmZAwMsC
+# Saved Loadout: M4
+# talents=CcEASWsDSHNyPDXnbxuIhH3ZdjZmZmFzYmZGAAAghZGmZYmtlZmZmhZMzAAAAAYsMzAzgxy2ALgBMDzgMD2AzMMMYWmZbAmZAwMsC
+# Saved Loadout: M5
+# talents=CcEASWsDSHNyPDXnbxuIhH3ZdDzMzsMzMmZGAAAghZGGjZGLzMzMDGzMAAAAAmZZmBMYssMwCYAzwMIzgNwMjtx2ALzsMAzMAYGWB
+# Saved Loadout: M6
+# talents=CcEASWsDSHNyPDXnbxuIhH3ZdDzMzsMzYmZGAAAghZGmZMzYZmZmZYGzMAAAAAmZZmBmBjltBWADYGmBZgNwMDjlBWmZbAmZAwMsC
+# Saved Loadout: H7
+# talents=CcEASWsDSHNyPDXnbxuIhH3ZdDzMzsMz8AmZGAAAghZGmZMzYZmZmZwYmBAAAAwMLzMwMYssMwCYAzwMIzgNwMDjtBWmZbAmZAwMsC
+# Saved Loadout: H8
+# talents=CcEASWsDSHNyPDXnbxuIhH3ZdjZmZmFzYmZGAAAghZGmZMzstMzMzMYMzAAAAAYmlZGYGM2WGYDMgZYGkZwGYmhhBWmZbAmZAwMsC
+
+# Checksum: b8042fa9

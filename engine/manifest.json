@@ -1,0 +1,13 @@
+{
+  "engine": "SimC Gear Resolver 0.1",
+  "simcCommit": "ac0f3a3c7ff9e521137c0ca1760d548330c697f3",
+  "gameData": "12.1.0.69814",
+  "runtime": "Node.js + WebAssembly",
+  "sha256": {
+    "gear-resolver.wasm": "2224f2f97c79b4f6037db6fd7fd40072f67b979a42624b98935f60ddba476821",
+    "gear-resolver.js": "a022a39a0cd8d35ec8da8be15560ecc51bc68b483930fd7e242836bf789ab8f9",
+    "gear_resolver.cpp": "165d917730bced1dc5de7da4e590ad2d2338149da5e8addbee309bfad384ef0d",
+    "simc-source.zip": "4e4eb957c089ad1ba6f8b81dfca32f8af912ac126a8269898ee2b1710cbf3ef1"
+  },
+  "adapterRevision": "0.2.0 - base_for_spec and gear_flags"
+}

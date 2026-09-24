@@ -23,13 +23,20 @@ module.exports=async({win,storage,output})=>{
  assert.equal(await js(`document.querySelectorAll('.workspace-section').length`),6);assert.equal(await js(`document.querySelector('#import-section').tagName`),'SECTION');
  assert(await js(`document.querySelector('#enchant-section [data-slot="gem"]')!==null`));assert(await js(`document.querySelector('#consumable-section [data-slot="food"]')!==null`));assert.equal(await js(`document.querySelector('#equipment-section [data-slot="gem"]')`),null);
  for(const id of ['equipment-section','enchant-section','consumable-section','filter-section','sort-section','results-section']){await click('#'+id+' > summary');await wait(`!document.querySelector('#${id}').open`);await saved();await click('#'+id+' > summary');await wait(`document.querySelector('#${id}').open`);await saved();}
- assert.equal(await count(),'0');assert.equal(await js(`document.querySelector('.stats-heading h3').textContent`),'填写基础属性');
+ assert.equal(await count(),'0');assert.equal(await js(`document.querySelector('.stats-heading h3').textContent`),'基础属性');
+ assert(await js(`document.querySelector('#import-section .stats-panel')!==null`));assert.equal(await js(`document.querySelector('#equipment-section .stats-panel')`),null);
  assert.equal(await js(`document.querySelectorAll('[data-wear-toggle],[data-gem-count],#gem-capacity,#item-position').length`),0);
  for(const [key]of M.stats)await fill('#base-'+key,key==='main'?100:0);await saved();assert.equal(character().baseStats.main,100);assert.equal(character().baseStats.crit,0);
  const sample=fs.readFileSync(path.join(__dirname,'engine/sample.simc'),'utf8');await fill('#input',sample);await click('#parse');await wait(`!document.querySelector('#parse').disabled`);await saved();
- let c=character();assert.equal(c.items.filter(i=>i.origin==='import').length,25);assert.equal(c.items.filter(i=>i.origin==='import'&&i.selected).length,15);assert.equal(c.baseStats.main,100);assert(c.items.every(i=>!('position'in i)&&!('equippedCount'in i)));
+ let c=character();assert.equal(c.items.filter(i=>i.origin==='import').length,25);assert.equal(c.items.filter(i=>i.origin==='import'&&i.selected).length,15);assert.equal(c.baseStats.main,618);assert.equal(c.baseStats.stamina,5060);assert.equal(c.rawBaseStats.stamina,4600);assert(c.items.every(i=>!('position'in i)&&!('equippedCount'in i)));
+ assert.equal(await js(`document.querySelector('#profile-race').value`),'night_elf');assert.equal(await js(`document.querySelector('#profile-class').value`),'warrior');assert.equal(await js(`document.querySelector('#profile-spec').value`),'arms');
+ assert(await js(`document.querySelector('[data-trait="112235"]').closest('label').textContent.includes('+10%耐力')`));
+ await click('[data-trait="112235"]');await wait(`!document.querySelector('#profile-race').disabled`);await saved();assert.equal(character().baseStats.stamina,5060);
+ await click('[data-trait="112235"]');await wait(`!document.querySelector('#profile-race').disabled`);await saved();assert.equal(character().baseStats.stamina,5060);
+ await js(`{const e=document.querySelector('#profile-race');e.value='orc';e.dispatchEvent(new Event('change',{bubbles:true}));}`);await wait(`!document.querySelector('#profile-race').disabled`);await saved();assert.equal(character().rawBaseStats.main,623);
+ await js(`{const e=document.querySelector('#profile-race');e.value='night_elf';e.dispatchEvent(new Event('change',{bubbles:true}));}`);await wait(`!document.querySelector('#profile-race').disabled`);await saved();assert.equal(character().baseStats.main,618);
  assert(BigInt(await count())>0n);assert.equal(await count(),String(M.combinationCount(c).total));
- const firstId=c.id;await click('#parse');await wait(`!document.querySelector('#parse').disabled`);await saved();assert.equal(character().baseStats.main,100);
+ const firstId=c.id;await click('#parse');await wait(`!document.querySelector('#parse').disabled`);await saved();assert.equal(character().baseStats.main,618);
  const groups=await js(`[...document.querySelectorAll('[data-gem-group]')].map(e=>({name:e.dataset.gemGroup,x:e.getBoundingClientRect().x,y:e.getBoundingClientRect().y,width:e.getBoundingClientRect().width}))`);assert.deepEqual(groups.map(g=>g.name),M.gemGroups);assert(groups.every(g=>Math.abs(g.y-groups[0].y)<1));assert(groups.every((g,n)=>n===0||g.x>groups[n-1].x));
  for(const group of M.gemGroups)assert.equal(await js(`document.querySelector('[data-gem-group="${group}"] .gem-group-list').children.length`),4);
  const height=await js(`innerHeight`);const barBefore=await js(`document.querySelector('#combination-bar').getBoundingClientRect().bottom`);await js(`window.scrollTo(0,document.body.scrollHeight)`);assert.equal(await js(`document.querySelector('#combination-bar').getBoundingClientRect().bottom`),barBefore);assert(Math.abs(barBefore-height)<1);
@@ -44,7 +51,7 @@ module.exports=async({win,storage,output})=>{
  await click(`[data-item="${head.id}"]`);await saved();assert.equal(await count(),'0');await click(`[data-item="${head.id}"]`);await saved();assert.equal(await count(),'6');
  assert.equal(await js(`document.querySelectorAll('[data-quality],#item-adaptive').length`),0);
  await click('#new-slot');await fill('#slot-name','临时增益');await js(`document.querySelector('#slot-form').requestSubmit()`);await saved();const custom=character().customSlots[0];await add(custom.id,'测试增益');assert.equal(await count(),'6');
- await click(`[data-tab="${firstId}"]`);await saved();assert.equal(character().baseStats.main,100);
+ await click(`[data-tab="${firstId}"]`);await saved();assert.equal(character().baseStats.main,618);
  const secondId=read().characters.find(c=>c.id!==firstId).id;await click(`[data-tab="${secondId}"]`);await saved();
  await click(`[data-item="${d.id}"]`);await saved();await click(`[data-item="${food2.id}"]`);await saved();assert.equal(await count(),'2');
  // Exercise new controls in a separate character, then restore the original tab.
@@ -83,7 +90,7 @@ module.exports=async({win,storage,output})=>{
  const editSort=async(field,direction,index=0)=>{await click(`[data-sort-index="${index}"] [data-sort-edit]`);await change('#sort-field',field);await change('#sort-direction',direction);await js(`document.querySelector('#sort-form').requestSubmit()`);await saved();};
  const search=async()=>{await click('#run-search');await wait(`document.querySelector('#search-status').textContent.startsWith('计算完成')`);};
  assert.equal(await js(`document.querySelector('#reset-filters').textContent`),'重置');assert.equal(await js(`document.querySelector('#filter-embellishment').tagName`),'INPUT');assert.equal(await js(`document.querySelector('#filter-tier').closest('label').firstChild.textContent`),'套装数量');
- assert.equal(await js(`document.querySelector('[data-range="haste"][data-bound="min"]').placeholder`),'58');assert.equal(await js(`document.querySelector('[data-range="haste"][data-bound="max"]').placeholder`),'74');
+ assert.equal(await js(`document.querySelector('[data-range="haste"][data-bound="min"]').placeholder`),'59');assert.equal(await js(`document.querySelector('[data-range="haste"][data-bound="max"]').placeholder`),'75');
  assert(await js(`document.querySelector('[data-range="haste"]').getBoundingClientRect().width<110`));
  await editSort('haste','asc');
  assert(await js(`document.querySelector('#results-section #result-limit')!==null`));assert.equal(await js(`document.querySelector('#sort-section #result-limit')`),null);
@@ -100,7 +107,7 @@ module.exports=async({win,storage,output})=>{
  assert(await js(`document.querySelector('.sort-floating').getBoundingClientRect().width>300`));const dragInfo=await js(`(()=>{const e=document.querySelector('.sort-floating'),r=e.getBoundingClientRect();return {y:r.y,transform:e.style.transform,classes:e.className,scroll:scrollY,order:[...document.querySelectorAll('#sort-rules .sort-card')].map(e=>e.dataset.sortIndex)};})()`);fs.writeFileSync(path.join(output,'drag-debug.png'),(await win.webContents.capturePage()).toPNG());assert(Math.abs(dragInfo.y-floatingStart)>30,JSON.stringify({dragPoints,floatingStart,dragInfo}));
  await wait(`document.querySelector('#sort-rules .sort-card').dataset.sortIndex==='1'`);
  fs.writeFileSync(path.join(output,'sort-drag-preview.png'),(await win.webContents.capturePage()).toPNG());
- win.webContents.sendInputEvent({type:'mouseUp',button:'left',clickCount:1,x:dragPoints.x+20,y:dragPoints.end});await saved();assert.equal(character().sort.rules[0].stat,'haste');
+ win.webContents.sendInputEvent({type:'mouseUp',button:'left',clickCount:1,x:dragPoints.x+20,y:dragPoints.end});await wait(`document.querySelector('[data-sort-index="0"]').textContent.includes('急速')`);await saved();assert.equal(character().sort.rules[0].stat,'haste');
  assert.equal(await js(`document.querySelector('.sort-delete').textContent`),'−');assert(await js(`getComputedStyle(document.querySelector('.sort-delete')).borderRadius==='50%'`));
  win.show();
  await js(`document.querySelector('#sort-section').scrollIntoView({block:'start'})`);await js(`new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);fs.writeFileSync(path.join(output,'sort-cards-preview.png'),(await win.webContents.capturePage()).toPNG());
@@ -109,7 +116,7 @@ module.exports=async({win,storage,output})=>{
  await click('[data-sort-index="0"] [data-sort-delete]');await saved();assert.equal(character().sort.rules.length,0);await search();assert.equal(await js(`document.querySelectorAll('.result-row').length`),2);
  await click('#add-sort-rule');await change('#sort-field','haste');await change('#sort-direction','asc');await js(`document.querySelector('#sort-form').requestSubmit()`);await saved();
  await change('#result-limit','50');await search();
- assert.equal(await js(`document.querySelectorAll('.result-row').length`),2);assert.equal(await js(`document.querySelector('.result-row summary span:nth-child(4)').textContent`),'58');
+ assert.equal(await js(`document.querySelectorAll('.result-row').length`),2);assert.equal(await js(`document.querySelector('.result-row summary span:nth-child(4)').textContent`),'59');
  await click('.result-row summary');assert(await js(`document.querySelector('.result-row').open`));assert(await js(`document.querySelector('.result-detail').textContent.includes('虚无空盘餐')`));
  const defaults=['main','crit','haste','mastery','versatility','tier','embellishments'];
  assert.deepEqual(await js(`[...document.querySelectorAll('[data-result-column]:checked')].map(e=>e.dataset.resultColumn)`),defaults);
@@ -126,8 +133,8 @@ module.exports=async({win,storage,output})=>{
  await fill('[data-range="haste"][data-bound="max"]',60);await saved();assert(await js(`document.querySelector('#search-error').textContent.includes('最低值不能大于最高值')`));assert.equal(await js(`document.querySelector('[data-range="haste"]').getAttribute('aria-invalid')`),'true');await click('#run-search');assert(await js(`document.querySelector('#search-error').textContent.includes('最低值不能大于最高值')`));assert.equal(await js(`document.querySelectorAll('.result-row').length`),1);
  await fill('[data-range="haste"][data-bound="max"]',100);await fill('[data-range="haste"][data-bound="min"]',80);await saved();await search();assert.equal(await js(`document.querySelectorAll('.result-row').length`),0);assert(await js(`document.querySelector('#search-results').textContent.includes('没有符合条件')`));
  await change('#filter-tier','2');await search();assert.equal(await js(`document.querySelectorAll('.result-row').length`),0);await change('#filter-tier','0');
- await click('#reset-filters');await saved();assert.equal(await js(`document.querySelector('[data-range="haste"][data-bound="min"]').value`),'');assert.equal(await js(`document.querySelector('[data-range="haste"][data-bound="min"]').placeholder`),'58');await change('#filter-embellishment','1');await search();assert.equal(await js(`document.querySelectorAll('.result-row').length`),0);await change('#filter-embellishment','0');await search();assert.equal(await js(`document.querySelectorAll('.result-row').length`),2);
- await editSort('haste','desc');await change('#result-limit','500');await search();assert.equal(await js(`document.querySelector('.result-row summary span:nth-child(4)').textContent`),'74');await editSort('haste','asc');await change('#result-limit','50');
+ await click('#reset-filters');await saved();assert.equal(await js(`document.querySelector('[data-range="haste"][data-bound="min"]').value`),'');assert.equal(await js(`document.querySelector('[data-range="haste"][data-bound="min"]').placeholder`),'59');await change('#filter-embellishment','1');await search();assert.equal(await js(`document.querySelectorAll('.result-row').length`),0);await change('#filter-embellishment','0');await search();assert.equal(await js(`document.querySelectorAll('.result-row').length`),2);
+ await editSort('haste','desc');await change('#result-limit','500');await search();assert.equal(await js(`document.querySelector('.result-row summary span:nth-child(4)').textContent`),'75');await editSort('haste','asc');await change('#result-limit','50');
  await fill('[data-range="haste"][data-bound="min"]',70);await saved();await search();await click('.result-row summary');
  const resultBefore=await js(`document.querySelector('#search-results').innerHTML`);
  await js(`window.filterOldName=current().items.find(i=>i.id==='${head.id}').name;current().items.find(i=>i.id==='${head.id}').name='临时改名';renderGear();save();`);await saved();assert.equal(await js(`document.querySelector('#search-results').innerHTML`),resultBefore);assert(await js(`!document.querySelector('#results-dirty').hidden`));

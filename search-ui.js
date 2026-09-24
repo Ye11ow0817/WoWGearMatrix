@@ -6,7 +6,7 @@
  const visibleColumns=c=>columnDefs.filter(([k])=>(Array.isArray(c.resultColumns)?c.resultColumns:defaultColumns).includes(k));
  function renderColumnChoices(){const selected=new Set(visibleColumns(current()).map(([k])=>k));$('#result-column-options').innerHTML=columnDefs.map(([k,label])=>`<label><input type="checkbox" data-result-column="${k}" ${selected.has(k)?'checked':''}>${label}</label>`).join('');}
  const cellText=(row,key)=>key==='tier'?`${row.tier} 件`:key==='embellishments'?`${row.embellishments} 件`:format(row.stats[key]);
- const sourceKey=c=>JSON.stringify([c.items,c.baseStats,c.mainType,c.customSlots]);
+ const sourceKey=c=>JSON.stringify([c.items,c.baseStats,c.rawBaseStats,c.attributeFactors,c.attributeResponse,c.attributeContext,c.traits?.map(t=>[t.id,t.enabled,t.rank]),c.mainType,c.customSlots]);
  const defaults=c=>{const key=sourceKey(c);if(key!==boundsKey){boundsKey=key;bounds=S.defaultRanges(c);}return bounds;};
  const signature=c=>{let config;try{config=S.settings(c,defaults(c));}catch{config=[c.filters,c.sort];}return JSON.stringify([sourceKey(c),config]);};
  function refreshInputs(){const c=current(),initial=defaults(c);for(const e of document.querySelectorAll('[data-range]')){const v=initial[e.dataset.range]?.[e.dataset.bound];e.placeholder=v===undefined?'不限':String(v);e.title=v===undefined?'无可计算的初始范围':`初始值：${v}`;e.classList.toggle('manual-value',e.value!=='');e.removeAttribute('aria-invalid');}let message='';try{S.settings(c,initial);}catch(error){message=error.message;}

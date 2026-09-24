@@ -26,13 +26,20 @@ function render() {
   $('#input').value=c.input;
   $('#parse').disabled=!!importingId;$('#input').disabled=importingId===c.id;
   $('#parse').textContent=importingId===c.id?'导入中…':'导入';
-  $('#main-type').value=c.mainType;$('#main-type').disabled=importingId===c.id;
+  const context=c.attributeContext||{},cls=context.class||'warrior',race=({forsaken:'undead',dracthyr_alliance:'dracthyr',dracthyr_horde:'dracthyr',earthen_dwarf:'earthen',earthen_alliance:'earthen',earthen_horde:'earthen',harronir:'haranir',haranir_alliance:'haranir',haranir_horde:'haranir',pandaren_alliance:'pandaren',pandaren_horde:'pandaren'})[context.race]||context.race||'human',spec=context.spec||M.classes[cls][0];
+  $('#profile-race').innerHTML=Object.entries(M.raceGroups).map(([group,entries])=>`<optgroup label="${group}">${Object.entries(entries).map(([id,label])=>`<option value="${id}">${label}</option>`).join('')}</optgroup>`).join('');
+  $('#profile-class').innerHTML=Object.entries(M.classLabels).map(([id,label])=>`<option value="${id}">${label}</option>`).join('');
+  $('#profile-spec').innerHTML=M.classes[cls].map(id=>`<option value="${id}">${M.specLabels[cls][id]}</option>`).join('');
+  $('#profile-race').value=race;$('#profile-class').value=cls;$('#profile-spec').value=spec;
+  for(const el of [$('#profile-race'),$('#profile-class'),$('#profile-spec')])el.disabled=importingId===c.id;
+  const traitLabel=t=>M.traitDescription(t,c.mainType,spec);
+  $('#profile-traits').innerHTML=c.traits?.length?c.traits.map(t=>`<label><input type="checkbox" data-trait="${t.id}" ${t.enabled?'checked':''} ${importingId===c.id?'disabled':''}><span>${escape(window.TalentZh?.[t.spellId]||t.name)} <span class="effect-detail">（${escape(traitLabel(t))}）</span></span></label>`).join(''):'<p class="hint">当前职业和专精暂无可选的属性天赋。</p>';
   $('#base-stats').innerHTML=M.itemStats.map(([key,label])=>`<tr data-stat-row="${key}"><th scope="row"><label for="base-${key}">${key==='main'?M.types[c.mainType]:label}</label></th><td><input class="stat-input" id="base-${key}" data-stat="${key}" type="number" min="0" max="10000000" step="1" value="${c.baseStats[key]??''}" placeholder="未填写" ${importingId===c.id?'disabled':''}></td></tr>`).join('');
   renderBaseline();renderGear();window.searchUI?.renderSettings();
 }
 function renderBaseline(){
   const c=current(),complete=M.itemStats.every(([k])=>Number.isFinite(c.baseStats[k]));
-  $('#baseline').textContent=complete?'基础属性已填写，选择装备不会改变这些数值。':'请填写全部基础属性，数值为 0 时也请填写 0。';
+  $('#baseline').textContent=complete?'站街属性已填写；内部保留增幅前的原始值。':'导入 SimC 字符串或手动填写站街属性。';
 }
 function renderCombinations(){
   const result=M.combinationCount(current());
@@ -150,17 +157,26 @@ $('#new-tab').addEventListener('click',()=>{if(state.characters.length>=100){$('
 $('#base-stats').addEventListener('input',e=>{
   if(!e.target.dataset.stat)return;
   const value=e.target.value;
-  current().baseStats[e.target.dataset.stat]=value!==''&&e.target.validity.valid?Number(value):null;
+  M.editDisplayedStat(current(),e.target.dataset.stat,value!==''&&e.target.validity.valid?Number(value):null);
   renderBaseline();save();
 });
-$('#main-type').addEventListener('change',()=>{current().mainType=$('#main-type').value;current().baseStats=M.emptyStats();render();save();});
+$('#profile-class').addEventListener('change',()=>{
+  const cls=$('#profile-class').value;if(!M.classes[cls])return;
+  M.selectProfile(current(),{class:cls,spec:M.classes[cls][0],race:$('#profile-race').value});render();save();
+});
+$('#profile-race').addEventListener('change',()=>{M.selectProfile(current(),{race:$('#profile-race').value});render();save();});
+$('#profile-spec').addEventListener('change',()=>{M.selectProfile(current(),{spec:$('#profile-spec').value});render();save();});
+$('#profile-traits').addEventListener('change',e=>{
+  const id=Number(e.target.dataset.trait),c=current(),trait=c.traits?.find(t=>t.id===id);if(!trait)return;
+  M.toggleTrait(c,id,e.target.checked);render();save();
+});
 $('#input').addEventListener('input',()=>{current().input=$('#input').value;save();});
 $('#parse').addEventListener('click',async()=>{
   const c=current();c.input=$('#input').value;importingId=c.id;render();save();
   try {
     const result=await window.simc.parse(c.input),target=state.characters.find(t=>t.id===c.id)||state.closedCharacters?.find(t=>t.id===c.id);
     if(!target)return;
-    if(result.code===1 || !result.gear?.items.length) {target.report=result.report;target.importInfo='导入失败，原有装备和基础属性已保留。';target.importWarning=true;}
+    if(result.code===1 || !result.gear?.baseStats) {target.report=result.report;target.importInfo='导入失败，原有装备和基础属性已保留。';target.importWarning=true;}
     else {M.applyImport(target,result.gear,result.report);target.importWarning=result.code!==0||result.gear.warnings.length>0;if(target.importWarning)target.importInfo+=' 部分装备或版本信息需核对。';}
     toast(target.importInfo);
   }catch(e){const target=state.characters.find(t=>t.id===c.id)||state.closedCharacters?.find(t=>t.id===c.id);if(target){target.report=e.message;target.importInfo='导入失败，原有装备和基础属性已保留。';target.importWarning=true;toast(target.importInfo);}}

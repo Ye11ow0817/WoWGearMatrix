@@ -12,7 +12,7 @@ try {
     $env:SIMC_TEST_SCRIPT = Join-Path $PSScriptRoot 'test-ui.cjs'
     foreach ($restore in @('0', '1')) {
         $env:SIMC_TEST_RESTORE = $restore
-        $process = Start-Process -FilePath $exe -ArgumentList '--smoke-test' -WorkingDirectory $output -WindowStyle Hidden -PassThru -RedirectStandardError (Join-Path $output "stderr-$restore.txt")
+        $process = Start-Process -FilePath $exe -ArgumentList '--smoke-test' -WorkingDirectory $output -WindowStyle Hidden -PassThru -RedirectStandardError (Join-Path $output "stderr-$restore.txt") -RedirectStandardOutput (Join-Path $output "stdout-$restore.txt")
         # Retain the native handle to keep ExitCode available after launcher exit.
         $null = $process.Handle
         if (!$process.WaitForExit(180000)) { $process.Kill(); throw "Release test timed out. Logs: $output" }
@@ -25,6 +25,7 @@ try {
         $status | Set-Content (Join-Path $output "status-$restore.txt")
         if ($null -eq $exitCode -or $exitCode -ne 0 -or !$passed) {
             Get-Content (Join-Path $output "stderr-$restore.txt") -ErrorAction SilentlyContinue
+            Get-Content (Join-Path $output "stdout-$restore.txt") -ErrorAction SilentlyContinue
             throw "Release test failed ($status). Logs: $output"
         }
         Get-Content (Join-Path $output $marker)

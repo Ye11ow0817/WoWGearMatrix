@@ -16,10 +16,20 @@ def patch(root):
         ('void profilesets_t::output_html( const sim_t&, std::ostream& ) const {}\n',''),
         ('void profilesets_t::output_text( const sim_t&, std::ostream& ) const {}\n','')],
       'engine/sim/proc_rng.cpp':[
-        ('#include "proc_rng.hpp"','#include <vector>\n#include "proc_rng.hpp"')]
+        ('#include "proc_rng.hpp"','#include <vector>\n#include "proc_rng.hpp"')],
+      'engine/sim/sim.cpp':[
+        ('    if ( p->validate_actor() )\n      p->create_actions();',
+         '#ifndef SC_NO_THREADING\n    if ( p->validate_actor() )\n      p->create_actions();\n#else\n    p->quiet = true;\n#endif // SC_NO_THREADING'),
+        ('    if ( healers > 0 || healing > 0 )',
+         '    // The stat-only adapter does not need synthetic healing targets.\n#ifndef SC_NO_THREADING\n    if ( healers > 0 || healing > 0 )'),
+        ('        healing_targets_to_create--;\n      }\n    }',
+         '        healing_targets_to_create--;\n      }\n    }\n#endif // SC_NO_THREADING')]
     }
     for rel,replacements in edits.items():
         p=root/rel;s=p.read_text(encoding='utf-8')
+        if rel=='engine/sim/sim.cpp':
+            s=s.replace('    if ( p->validate_actor() )\n#ifndef SC_NO_THREADING\n      p->create_actions();\n#else\n      p->quiet = true;\n#endif // SC_NO_THREADING',
+                        '#ifndef SC_NO_THREADING\n    if ( p->validate_actor() )\n      p->create_actions();\n#else\n    p->quiet = true;\n#endif // SC_NO_THREADING')
         for a,b in replacements:
             if b and b in s:continue
             if not b and a not in s:continue

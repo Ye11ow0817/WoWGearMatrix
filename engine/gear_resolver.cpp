@@ -2,6 +2,7 @@
 #include "simulationcraft.hpp"
 #include "dbc/client_data.hpp"
 #include "dbc/embellishment_data.hpp"
+#include "dbc/spelltext_data.hpp"
 #include "item/enchants.hpp"
 #include "class_modules/class_module.hpp"
 #include "player/unique_gear.hpp"
@@ -11,6 +12,8 @@
 #include <regex>
 #include <set>
 #include <filesystem>
+#include <array>
+#include <cmath>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -26,6 +29,11 @@ slot_e parse_slot(const std::string& s) {
   if(s=="shoulder")return SLOT_SHOULDERS;
   if(s=="wrist")return SLOT_WRISTS;
   return util::parse_slot_type(s);
+}
+player_e parse_class(const std::string& name){
+  if(name=="death_knight")return DEATH_KNIGHT;
+  if(name=="demon_hunter")return DEMON_HUNTER;
+  return util::parse_player_type(name);
 }
 std::string error_chain(const std::exception& e) {
   std::string s=e.what();
@@ -60,6 +68,33 @@ std::string stat_text(const gear_stats_t& stats) {
 std::string pairs_text(const std::vector<stat_pair_t>& pairs) {
   gear_stats_t v;for(auto& p:pairs)v.add_stat(p.stat,p.value);return stat_text(v);
 }
+std::array<double,12> character_values(player_t* p){
+  return {p->get_attribute(ATTR_STRENGTH),p->get_attribute(ATTR_AGILITY),p->get_attribute(ATTR_STAMINA),p->get_attribute(ATTR_INTELLECT),p->composite_armor(),p->composite_rating(RATING_MELEE_CRIT),p->composite_rating(RATING_MELEE_HASTE),p->composite_rating(RATING_MASTERY),p->composite_rating(RATING_DAMAGE_VERSATILITY),p->composite_rating(RATING_AVOIDANCE),p->composite_rating(RATING_LEECH),p->composite_rating(RATING_SPEED)};
+}
+std::array<double,12> character_multipliers(player_t* p){
+  return {p->composite_attribute_multiplier(ATTR_STRENGTH),p->composite_attribute_multiplier(ATTR_AGILITY),p->composite_attribute_multiplier(ATTR_STAMINA),p->composite_attribute_multiplier(ATTR_INTELLECT),p->composite_base_armor_multiplier()*p->composite_armor_multiplier(),p->composite_rating_multiplier(RATING_MELEE_CRIT),p->composite_rating_multiplier(RATING_MELEE_HASTE),p->composite_rating_multiplier(RATING_MASTERY),p->composite_rating_multiplier(RATING_DAMAGE_VERSATILITY),p->composite_rating_multiplier(RATING_AVOIDANCE),p->composite_rating_multiplier(RATING_LEECH),p->composite_rating_multiplier(RATING_SPEED)};
+}
+std::array<double,12> character_with_probe_gear(player_t* p){
+  const auto saved=p->initial.stats;
+  for(const auto stat:{STAT_ARMOR,STAT_STRENGTH,STAT_AGILITY,STAT_STAMINA,STAT_INTELLECT,STAT_CRIT_RATING,STAT_HASTE_RATING,STAT_MASTERY_RATING,STAT_VERSATILITY_RATING,STAT_AVOIDANCE_RATING,STAT_LEECH_RATING,STAT_SPEED_RATING})
+    p->initial.stats.add_stat(stat,1000);
+  p->reset();const auto values=character_values(p);
+  p->initial.stats=saved;p->reset();
+  return values;
+}
+std::array<double,3> armor_response(player_t* p){
+  const auto saved=p->initial.stats;
+  const auto baseline=character_values(p)[4];
+  auto probe=[&](bool agility,bool mastery){
+    p->initial.stats=saved;
+    if(agility)p->initial.stats.add_stat(STAT_AGILITY,1000);
+    if(mastery)p->initial.stats.add_stat(STAT_MASTERY_RATING,1000);
+    p->reset();return character_values(p)[4]-baseline;
+  };
+  const auto values=std::array<double,3>{probe(true,false),probe(false,true),probe(true,true)};
+  p->initial.stats=saved;p->reset();return values;
+}
+constexpr std::array<const char*,12> character_keys={"strength","agility","stamina","intellect","armor","crit_rating","haste_rating","mastery_rating","versatility_rating","avoidance_rating","leech_rating","speed_rating"};
 }
 
 int main(int argc,char** argv) {
@@ -73,11 +108,22 @@ int main(int argc,char** argv) {
     else {std::ifstream f(std::filesystem::u8path(argv[1]),std::ios::binary);if(!f)throw std::runtime_error("Cannot open input");text.assign(std::istreambuf_iterator<char>(f),{});}
     if(text.size()>4*1024*1024)throw std::runtime_error("Input exceeds 4 MiB");
     if(text.compare(0,3,"\xef\xbb\xbf")==0)text.erase(0,3);
-    std::vector<Row> rows;std::string source="equipped",label,name="Character",class_name,race_name="human",spec_name,version,professions;int level=0,expected=0;
+    std::vector<Row> rows;std::string source="equipped",label,name="Character",class_name,race_name="human",spec_name,version,professions,talents;std::set<unsigned> disabled_traits,enabled_traits;bool discover_traits=false;int level=0,expected=0;
     std::istringstream input(text);std::string line;
     const std::regex label_pattern("^# (.*) \\(([0-9]+)\\)$");
     while(std::getline(input,line)) {
       line=trim(line);std::smatch match;
+      if(line.rfind("# wgm_disable_traits=",0)==0){
+        std::istringstream ids(line.substr(21));std::string token;
+        while(std::getline(ids,token,'/'))if(!token.empty()&&token.find_first_not_of("0123456789")==token.npos)disabled_traits.insert(static_cast<unsigned>(std::stoul(token)));
+        continue;
+      }
+      if(line.rfind("# wgm_enable_traits=",0)==0){
+        std::istringstream ids(line.substr(20));std::string token;
+        while(std::getline(ids,token,'/'))if(!token.empty()&&token.find_first_not_of("0123456789")==token.npos)enabled_traits.insert(static_cast<unsigned>(std::stoul(token)));
+        continue;
+      }
+      if(line=="# wgm_discover_traits=1"){discover_traits=true;continue;}
       if(line.rfind("# WoW ",0)==0)version=line.substr(6);
       if(line.rfind("### ",0)==0){source=line.substr(4);label.clear();expected=0;continue;}
       if(std::regex_match(line,match,label_pattern)){label=match[1];expected=std::stoi(match[2]);continue;}
@@ -90,12 +136,33 @@ int main(int argc,char** argv) {
       if(key=="level")level=std::stoi(val);
       else if(key=="race")race_name=val;
       else if(key=="spec")spec_name=val;
+      else if(key=="talents")talents=val;
       else if(key=="professions")professions=val;
-      else if(util::parse_player_type(key)!=PLAYER_NONE){class_name=key;name=val;if(name.size()>1&&name.front()=='"'&&name.back()=='"')name=name.substr(1,name.size()-2);}
+      else if(parse_class(key)!=PLAYER_NONE){class_name=key;name=val;if(name.size()>1&&name.front()=='"'&&name.back()=='"')name=name.substr(1,name.size()-2);}
     }
-    if(rows.empty())throw std::runtime_error("No equipment found");
     if(rows.size()>2000)throw std::runtime_error("Too many items");
     if(class_name.empty()||level<1||level>MAX_LEVEL)throw std::runtime_error("Missing/unsupported character class or level");
+    const auto parsed_race=util::parse_race_type(race_name);
+    const auto parsed_class=parse_class(class_name);
+    const auto parsed_spec=dbc::translate_spec_str(parsed_class,spec_name);
+    if(parsed_race==RACE_UNKNOWN||parsed_race==RACE_NONE||parsed_spec==SPEC_NONE)throw std::runtime_error("Missing/unsupported race or specialization");
+    auto valid_trait=[&](const trait_data_t& trait){
+      return trait.id_class==util::class_id(parsed_class)&&trait.row>0&&trait.col>0&&trait.max_ranks>0&&
+        (std::all_of(trait.id_spec.begin(),trait.id_spec.end(),[](unsigned id){return id==0;})||
+         std::find(trait.id_spec.begin(),trait.id_spec.end(),static_cast<unsigned>(parsed_spec))!=trait.id_spec.end()||
+         trait_data_t::is_hero_trait_available(&trait,parsed_class,parsed_spec,false));
+    };
+    for(unsigned id:enabled_traits){const auto* trait=trait_data_t::find(id,false);if(!trait||!valid_trait(*trait))throw std::runtime_error("Invalid enabled trait: "+std::to_string(id));}
+    auto apply_manual_traits=[&](player_t* actor,const std::set<unsigned>& ids){
+      for(unsigned id:ids){const auto* data=trait_data_t::find(id,false);const auto text=std::to_string(id)+":"+std::to_string(data->max_ranks)+"/";
+        switch(static_cast<talent_tree>(data->tree_index)){
+          case talent_tree::CLASS:actor->class_talents_str+=text;break;
+          case talent_tree::SPECIALIZATION:actor->spec_talents_str+=text;break;
+          case talent_tree::HERO:actor->hero_talents_str+=text;break;
+          default:break;
+        }
+      }
+    };
     dbc::init();
     module_t::init();
     unique_gear::register_hotfixes();
@@ -103,14 +170,98 @@ int main(int argc,char** argv) {
     unique_gear::sort_special_effects();
     hotfix::apply();
     sim_t sim;sim.strict_parsing=true;sim.item_db_sources={"local"};
-    auto* player=module_t::get(util::parse_player_type(class_name))->create_player(&sim,name,util::parse_race_type(race_name));
+    auto* player=module_t::get(parsed_class)->create_player(&sim,name,parsed_race);
     player->true_level=level;
-    player->_spec=dbc::translate_spec_str(player->type,spec_name);
+    player->_spec=parsed_spec;
+    player->talents_str=talents;
+    apply_manual_traits(player,enabled_traits);
+    std::vector<std::tuple<talent_tree,unsigned,unsigned>> all_traits;
+    sim.register_actor_initializer(INIT_ACTOR_TALENTS+1,[&](player_t* actor){
+      if(actor!=player)return;
+      all_traits=actor->player_traits;
+      actor->player_traits.erase(std::remove_if(actor->player_traits.begin(),actor->player_traits.end(),[&](const auto& trait){return disabled_traits.count(std::get<1>(trait))>0;}),actor->player_traits.end());
+    },"wgm_trait_selection");
+    // A naked character has no usable combat action list. This adapter only
+    // needs SimC's initialization phases, so keep it active for stat queries.
+    sim.register_actor_initializer(INIT_ACTOR_CREATE_ACTIONS+1,[&](player_t* actor){if(actor==player)actor->quiet=false;},"wgm_stat_only");
     std::istringstream profs(professions);std::string prof;
     while(std::getline(profs,prof,'/')){auto eq=prof.find('=');if(eq==prof.npos)continue;auto p=util::parse_profession_type(prof.substr(0,eq));if(p!=PROFESSION_NONE)player->profession[p]=std::stoi(prof.substr(eq+1));}
+    sim.init();
+    player->reset();
     std::ostringstream out;
     out<<"SimC Gear Resolver 0.1 | SimC "<<SC_VERSION<<"\nData: "<<dbc::client_data_version_str(false)<<"\nSource: ac0f3a3c7ff9e521137c0ca1760d548330c697f3\nCharacter: "<<name<<" | "<<class_name<<"/"<<spec_name<<" | level="<<level<<"\nExport: "<<version<<"\n";
-    out<<"Scope: item base stats + fixed gem/enchant stats. No combat, talents, set bonuses or proc averages.\n";
+    out<<"Scope: un-geared character stats with selected permanent talents; item fixed stats. No combat, temporary buffs, set bonuses or proc averages.\n";
+    out<<"Context: race="<<race_name<<" | talents="<<talents<<"\n";
+    out<<"raw_character: strength="<<player->dbc->race_base(player->race).strength+player->dbc->attribute_base(player->type,level).strength
+       <<", agility="<<player->dbc->race_base(player->race).agility+player->dbc->attribute_base(player->type,level).agility
+       <<", stamina="<<player->dbc->race_base(player->race).stamina+player->dbc->attribute_base(player->type,level).stamina
+       <<", intellect="<<player->dbc->race_base(player->race).intellect+player->dbc->attribute_base(player->type,level).intellect<<"\n";
+    out<<"initial_character: "<<stat_text(player->initial.stats)<<"\n";
+    const auto character=character_values(player);
+    const auto multipliers=character_multipliers(player);
+    const auto response=parsed_class==DEMON_HUNTER&&parsed_spec==DEMON_HUNTER_VENGEANCE?armor_response(player):std::array<double,3>{};
+    const auto character_with_gear=discover_traits?character_with_probe_gear(player):character;
+    out<<"character_stats: ";for(size_t i=0;i<character.size();++i)out<<(i?", ":"")<<character_keys[i]<<"="<<character[i];out<<"\n";
+    out<<"character_factors: ";for(size_t i=0;i<multipliers.size();++i)out<<(i?", ":"")<<character_keys[i]<<"="<<multipliers[i];out<<"\n";
+    if(parsed_class==DEMON_HUNTER&&parsed_spec==DEMON_HUNTER_VENGEANCE)
+      out<<"character_response: armor_agility="<<response[0]<<", armor_mastery="<<response[1]<<", armor_joint="<<response[2]<<"\n";
+    for(const auto& trait:all_traits){
+      auto* data=trait_data_t::find(std::get<1>(trait),false);
+      if(data)out<<"trait: id="<<std::get<1>(trait)<<" | spell="<<data->id_spell<<" | name="<<data->name<<" | rank="<<std::get<2>(trait)<<" | enabled="<<(disabled_traits.count(std::get<1>(trait))?0:1)<<" | origin="<<(enabled_traits.count(std::get<1>(trait))?"manual":"import")<<"\n";
+    }
+    // Isolate selected traits with SimC's own initialization. Only changes to
+    // the displayed attributes become editable effects in the UI.
+    std::set<unsigned> seen_traits;
+    std::vector<std::tuple<talent_tree,unsigned,unsigned>> candidates=all_traits;
+    if(discover_traits){
+      for(auto tree:{talent_tree::CLASS,talent_tree::SPECIALIZATION,talent_tree::HERO})
+        for(const auto& data:trait_data_t::data(util::class_id(parsed_class),tree,false))
+          if(valid_trait(data))candidates.emplace_back(tree,data.id_trait_node_entry,data.max_ranks);
+    }
+    for(const auto& trait:candidates){
+      const unsigned id=std::get<1>(trait);
+      if(!seen_traits.insert(id).second)continue;
+      const bool selected=std::any_of(all_traits.begin(),all_traits.end(),[&](const auto& entry){return std::get<1>(entry)==id;});
+      try{
+        sim_t trial;trial.strict_parsing=true;trial.item_db_sources={"local"};
+        auto* candidate=module_t::get(parse_class(class_name))->create_player(&trial,name,util::parse_race_type(race_name));
+        candidate->true_level=level;candidate->_spec=dbc::translate_spec_str(candidate->type,spec_name);candidate->talents_str=talents;
+        const bool disabled=disabled_traits.count(id)>0;
+        auto trial_enabled=enabled_traits;
+        if(selected)trial_enabled.erase(id);else trial_enabled.insert(id);
+        apply_manual_traits(candidate,trial_enabled);
+        trial.register_actor_initializer(INIT_ACTOR_TALENTS+1,[&](player_t* actor){
+          if(actor!=candidate)return;
+          actor->player_traits.erase(std::remove_if(actor->player_traits.begin(),actor->player_traits.end(),[&](const auto& entry){const auto entry_id=std::get<1>(entry);return disabled?(disabled_traits.count(entry_id)>0&&entry_id!=id):(disabled_traits.count(entry_id)>0||(selected&&entry_id==id));}),actor->player_traits.end());
+        },"wgm_trial_trait");
+        trial.register_actor_initializer(INIT_ACTOR_CREATE_ACTIONS+1,[&](player_t* actor){if(actor==candidate)actor->quiet=false;},"wgm_trial_active");
+        trial.init();candidate->reset();const auto without=character_values(candidate),without_factors=character_multipliers(candidate);
+        const auto without_with_gear=discover_traits?character_with_probe_gear(candidate):without;
+        const auto trial_response=parsed_class==DEMON_HUNTER&&parsed_spec==DEMON_HUNTER_VENGEANCE?armor_response(candidate):std::array<double,3>{};
+        std::ostringstream delta,ratio_text,gear_delta;bool any=false,has_ratio=false,has_gear_delta=false;
+        for(size_t i=0;i<character.size();++i){const auto difference=(!selected||disabled)?without[i]-character[i]:character[i]-without[i];if(std::abs(difference)>0.001){if(any)delta<<", ";any=true;delta<<character_keys[i]<<"="<<difference;}}
+        for(size_t i=0;i<multipliers.size();++i){const auto with=(!selected||disabled)?without_factors[i]:multipliers[i],without_value=(!selected||disabled)?multipliers[i]:without_factors[i];if(without_value==0)continue;const auto ratio=with/without_value;if(std::abs(ratio-1)>0.00001){if(has_ratio)ratio_text<<", ";has_ratio=true;ratio_text<<character_keys[i]<<"="<<ratio;}}
+        for(size_t i=0;i<character_with_gear.size();++i){const auto difference=(!selected||disabled)?without_with_gear[i]-character_with_gear[i]:character_with_gear[i]-without_with_gear[i];if(std::abs(difference)>0.001){if(has_gear_delta)gear_delta<<", ";has_gear_delta=true;gear_delta<<character_keys[i]<<"="<<difference;}}
+        if(any||has_ratio||has_gear_delta){
+          if(!selected){const auto* data=trait_data_t::find(id,false);out<<"trait: id="<<id<<" | spell="<<data->id_spell<<" | name="<<data->name<<" | rank="<<data->max_ranks<<" | enabled=0 | origin=available\n";}
+          if(any)out<<"trait_effect: id="<<id<<" | stats: "<<delta.str()<<"\n";
+          if(has_ratio)out<<"trait_multiplier: id="<<id<<" | stats: "<<ratio_text.str()<<"\n";
+          if(has_gear_delta)out<<"trait_probe: id="<<id<<" | stats: "<<gear_delta.str()<<"\n";
+          if(parsed_class==DEMON_HUNTER&&parsed_spec==DEMON_HUNTER_VENGEANCE){
+            const auto sign=(!selected||disabled)?-1.0:1.0;
+            out<<"trait_response: id="<<id<<" | armor_agility="<<sign*(response[0]-trial_response[0])
+               <<", armor_mastery="<<sign*(response[1]-trial_response[1])
+               <<", armor_joint="<<sign*(response[2]-trial_response[2])<<"\n";
+          }
+          const auto talent=(!selected||disabled)?candidate->find_talent_spell(id):player->find_talent_spell(id);
+          if(talent.ok()){
+            out<<"trait_spell: id="<<id<<" | rank="<<talent.rank();
+            for(unsigned n=1;n<=talent->effect_count();++n){const auto& effect=talent->effectN(n);if(effect.ok())out<<" | e"<<n<<"="<<effect.base_value();}
+            out<<"\n";
+          }
+        }
+      }catch(const std::exception& e){out<<"WARNING: unable to isolate trait "<<id<<": "<<error_chain(e)<<"\n";}
+    }
     if(!version.empty()&&trim(version.substr(0,version.find(',')))!=dbc::client_data_version_str(false))
       out<<"WARNING: export version differs from bundled data; compatibility has not been verified.\n";
     int ok=0,failed=0,mismatches=0;

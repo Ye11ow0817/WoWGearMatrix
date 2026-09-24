@@ -52,7 +52,7 @@ function validate(c){
 function statsFor(c,i){const out={...zero(),...i.stats};if(i.supportedMainTypes?.length?!i.supportedMainTypes.includes(c.mainType):!i.adaptiveMain&&i.mainType!==c.mainType)out.main=0;return out;}
 // Exact attainable bounds for each individual attribute, including mandatory picks and socket counts.
 function defaultRanges(c){
- const result={};if(!M.combinationCount(c).total)return result;
+ const result={},rawBounds={};if(!M.combinationCount(c).total)return result;
  const groups=M.getSlots(c).filter(([k])=>!M.usageSlot(k)).map(([slot,,cap])=>{const all=c.items.filter(i=>i.slot===slot);return {slot,items:all.filter(i=>i.selected),take:Math.min(cap,all.length)};}).filter(g=>g.take&&!(g.slot==='off_hand'&&!g.items.length));
  const gems=c.items.filter(i=>i.slot==='gem'&&i.selected),fixed=new Map(c.items.map(i=>[i.id,statsFor(c,i)]));
  const enchants=new Map(c.items.filter(i=>!M.usageSlot(i.slot)).map(i=>[i.id,M.enchantPool(c,i)]));
@@ -79,7 +79,25 @@ function defaultRanges(c){
   }
   let lower=c.baseStats[k],upper=lower;
   for(const [slot]of M.getSlots(c).filter(([slot])=>M.usageSlot(slot)&&!['gem','enchant'].includes(slot))){const values=c.items.filter(i=>i.slot===slot&&i.selected).map(i=>fixed.get(i.id)[k]);if(values.length){lower+=Math.min(...values);upper+=Math.max(...values);}}
-  if(Number.isFinite(min))result[k]={min:min+lower,max:max+upper};
+  if(Number.isFinite(min)){
+   rawBounds[k]={min:min+lower-c.baseStats[k],max:max+upper-c.baseStats[k]};
+   result[k]={min:M.scaledStat(c,k,rawBounds[k].min),max:M.scaledStat(c,k,rawBounds[k].max)};
+  }
+ }
+ // Cross-attribute passives couple armor and Strength. Independent extrema
+ // provide safe automatic bounds even when the minimizing gear differs.
+ if(c.attributeContext?.class==='warrior'&&rawBounds.main&&rawBounds.armor){
+  const low=M.scaledStats(c,{main:rawBounds.main.min,armor:rawBounds.armor.min});
+  const high=M.scaledStats(c,{main:rawBounds.main.max,armor:rawBounds.armor.max});
+  result.main={min:low.main,max:high.main};result.armor={min:low.armor,max:high.armor};
+ }
+ if(c.attributeContext?.class==='demon_hunter'&&c.attributeContext?.spec==='vengeance'&&rawBounds.main&&rawBounds.mastery&&rawBounds.armor){
+  const low=M.scaledStats(c,{main:rawBounds.main.min,mastery:rawBounds.mastery.min,armor:rawBounds.armor.min});
+  const high=M.scaledStats(c,{main:rawBounds.main.max,mastery:rawBounds.mastery.max,armor:rawBounds.armor.max});
+  result.armor={min:Math.min(low.armor,high.armor),max:Math.max(low.armor,high.armor)};
+ }
+ if(c.attributeContext?.class==='hunter'&&c.attributeContext?.spec==='survival'&&rawBounds.main&&c.traits?.some(t=>t.id===126332&&t.enabled)){
+  result.main.max=Math.max(result.main.max,M.scaledStats(c,{main:rawBounds.main.max},{dualWield:true}).main);
  }
  return result;
 }
@@ -118,6 +136,9 @@ function createSearch(c){
   const add=(id,n=1)=>{for(const k of keys)total[k]+=fixed.get(id)[k]*n;};
   for(const id of combo.gear){const i=byId.get(id);add(id);if(i.embellishment)embellishments++;if(i.set&&M.tierSlots.includes(i.slot)){const group=tierGroup(i)||'unknown:'+id;sets.set(group,(sets.get(group)||0)+1);}}
   for(const id of combo.consumables)add(id);for(const g of combo.gems)add(g.id,g.count);for(const e of combo.enchants)add(e.id);
+  const weapon=id=>{const item=byId.get(id);return item&&['main_hand','off_hand'].includes(item.slot)&&!/none|shield|2h/.test(item.weaponType||'');};
+  const dualWield=combo.gear.filter(weapon).length===2;
+  Object.assign(total,M.scaledStats(c,Object.fromEntries(keys.map(k=>[k,total[k]-c.baseStats[k]])),{dualWield}));
   const tier=Math.max(0,...sets.values());if(tier<config.tier||(config.embellishment!==null&&embellishments!==config.embellishment))return;
   for(const k of keys){const r=config.ranges[k];if(r.min!==undefined&&total[k]<r.min||r.max!==undefined&&total[k]>r.max)return;}
   matched++;top.add({...combo,stats:total,tier,sets:[...sets],embellishments,index:visited,sortValues:config.rules.map(r=>ruleValue(r,total)),combinationId:combinationId(combo)});

@@ -52,7 +52,7 @@ try {
     assert.equal(r.status, 2); assert.match(r.stdout, /Unsupported item option/);
   });
   test('bad input returns a nonzero status', () => {
-    const r = run('not a profile'); assert.equal(r.status, 1); assert.match(r.stderr, /No equipment/);
+    const r = run('not a profile'); assert.equal(r.status, 1); assert.match(r.stderr, /Missing\/unsupported character/);
   });
   test('different export version produces an explicit warning', () => {
     const r = run('# WoW 12.0.0.1, TOC 120000\n' + header + ring);

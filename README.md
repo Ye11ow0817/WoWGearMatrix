@@ -29,8 +29,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 输出：
 
-- `dist/WoWGearMatrix-0.3.0-win-x64.exe`：免安装启动文件，可单独复制运行，用户无需安装 Node.js。
-- `dist/WoWGearMatrix-0.3.0-source.zip`：对应源码、锁文件、构建脚本及 SimC 源码和许可证，供源码交付与重建使用。
+- `dist/WoWGearMatrix-0.3.3-win-x64.exe`：免安装启动文件，可单独复制运行，用户无需安装 Node.js。
+- `dist/WoWGearMatrix-<版本号>-source.zip`：运行 `build.ps1` 时生成的对应源码、锁文件、构建脚本及 SimC 源码和许可证，供源码交付与重建使用。
 - `dist/win-unpacked/`：构建中间产物，无需发送给用户。
 
 仅打包可运行 `npm run dist:win`；单独验证已有 EXE 可运行 `powershell -ExecutionPolicy Bypass -File .\verify-release.ps1`。
@@ -46,6 +46,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 开发版和正式版均将数据保存在 `%APPDATA%\WoWGearMatrix`，角色文件为 `characters-v2.json`，备份为 `characters-v2.json.bak`。数据不随免安装程序的临时目录清理。
 
 不读取或迁移旧目录的数据。新目录没有角色文件时，应用会创建默认角色。验证脚本使用独立临时数据，不改用户角色。
+
+## 基础属性
+
+导入 SimC 字符串后，应用使用随附 SimC 数据和角色初始化规则填写脱装、无食物合剂等临时增益的面板属性，保留种族、职业、专精与导出串中已选天赋的常驻效果。也可以不导入字符串，直接选择种族、职业、专精和属性天赋，并手动填写面板值。手动角色默认满级，可选属性天赋按满级点数计算；导入角色保留导出串中的实际点数。种族、职业、专精显示中文；天赋资料由随包 SimC 生成，已核对的名称显示 Wowhead CN 中文。天赋括号中显示该法术自身的数值，例如“先知之路（+3%智力）”；不同天赋叠乘后的实际属性由 SimC 规则计算。
+
+只有重新导入或手动编辑属性才会改变显示值；切换种族、职业、专精或天赋会更新内部原始属性及倍率，不覆盖面板输入。手动编辑时按当前倍率反推增幅前的原始值。对装备数值的常驻倍率以及战士护甲与力量、复仇恶魔猎手精通与护甲等属性联动会用于组合属性汇总。装备条件、完整套装、触发效果与战斗中增益不属于基础属性；需要与游戏内脱装面板核对这些特殊效果。
 
 ## 代码入口
 

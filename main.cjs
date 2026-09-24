@@ -10,9 +10,13 @@ let win, active;
 const ownsLock=smoke||app.requestSingleInstanceLock();
 if(!ownsLock)app.quit();
 app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.focus();}});
-function parse(text) {
-  if (typeof text !== 'string' || !text.trim()) return Promise.resolve({ code: 1, report: '请输入 SimC 导出字符串。' });
+function parse(text,profile) {
+  if (typeof text !== 'string' || (!text.trim()&&!profile)) return Promise.resolve({ code: 1, report: '请输入 SimC 导出字符串。' });
   if (Buffer.byteLength(text, 'utf8') > 4 * 1024 * 1024) return Promise.resolve({ code: 1, report: '输入不能超过 4 MiB。' });
+  if(profile!==undefined){
+    const M=require('./model.js');
+    if(!profile||!M.classes[profile.class]||!M.classes[profile.class].includes(profile.spec)||!M.races.includes(profile.race)||!Array.isArray(profile.disabledTraits)||profile.disabledTraits.length>100||profile.disabledTraits.some(n=>!Number.isInteger(n)||n<1||n>10000000)||!Array.isArray(profile.enabledTraits||[])||(profile.enabledTraits||[]).length>100||(profile.enabledTraits||[]).some(n=>!Number.isInteger(n)||n<1||n>10000000))return Promise.resolve({code:1,report:'角色选项无效。'});
+  }
   if (active) return Promise.resolve({ code: 1, report: '正在解析，请稍候。' });
   return new Promise(resolve => {
     const child = utilityProcess.fork(path.join(__dirname, 'worker.cjs'), [], { stdio: 'ignore', serviceName: 'SimC Gear Resolver' });
@@ -22,7 +26,7 @@ function parse(text) {
     const timer = setTimeout(() => finish({ code: 1, report: '解析超时（60 秒），请检查输入后重试。' }), 60000);
     child.on('message', finish);
     child.on('exit', code => finish({ code: 1, report: `解析进程提前退出（${code}）。` }));
-    child.postMessage(text);
+    child.postMessage({data:text,profile});
   });
 }
 if(ownsLock)app.whenReady().then(async () => {

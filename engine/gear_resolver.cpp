@@ -170,6 +170,7 @@ int main(int argc,char** argv) {
     unique_gear::sort_special_effects();
     hotfix::apply();
     sim_t sim;sim.strict_parsing=true;sim.item_db_sources={"local"};
+    sim.use_optimal_buffs_and_debuffs(0);
     auto* player=module_t::get(parsed_class)->create_player(&sim,name,parsed_race);
     player->true_level=level;
     player->_spec=parsed_spec;
@@ -202,6 +203,17 @@ int main(int argc,char** argv) {
     const auto response=parsed_class==DEMON_HUNTER&&parsed_spec==DEMON_HUNTER_VENGEANCE?armor_response(player):std::array<double,3>{};
     const auto character_with_gear=discover_traits?character_with_probe_gear(player):character;
     out<<"character_stats: ";for(size_t i=0;i<character.size();++i)out<<(i?", ":"")<<character_keys[i]<<"="<<character[i];out<<"\n";
+    // Export the naked character-sheet values from SimC, including class and
+    // specialization passives. Haste is stored internally as a time multiplier.
+    const bool spell_role=player->primary_role()==ROLE_SPELL||player->primary_role()==ROLE_HEAL;
+    out.precision(10);
+    out<<"character_percent: crit="<<100*(spell_role?player->composite_spell_crit_chance():player->composite_melee_crit_chance())
+       <<", haste="<<100*(1/(spell_role?player->composite_spell_haste():player->composite_melee_haste())-1)
+       <<", mastery="<<100*player->composite_mastery_value()
+       <<", versatility="<<100*player->composite_damage_versatility()
+       <<", avoidance="<<100*player->composite_avoidance()
+       <<", leech="<<100*player->composite_leech()
+       <<", speed="<<100*player->composite_run_speed()<<"\n";
     out<<"character_factors: ";for(size_t i=0;i<multipliers.size();++i)out<<(i?", ":"")<<character_keys[i]<<"="<<multipliers[i];out<<"\n";
     if(parsed_class==DEMON_HUNTER&&parsed_spec==DEMON_HUNTER_VENGEANCE)
       out<<"character_response: armor_agility="<<response[0]<<", armor_mastery="<<response[1]<<", armor_joint="<<response[2]<<"\n";
@@ -224,6 +236,7 @@ int main(int argc,char** argv) {
       const bool selected=std::any_of(all_traits.begin(),all_traits.end(),[&](const auto& entry){return std::get<1>(entry)==id;});
       try{
         sim_t trial;trial.strict_parsing=true;trial.item_db_sources={"local"};
+        trial.use_optimal_buffs_and_debuffs(0);
         auto* candidate=module_t::get(parse_class(class_name))->create_player(&trial,name,util::parse_race_type(race_name));
         candidate->true_level=level;candidate->_spec=dbc::translate_spec_str(candidate->type,spec_name);candidate->talents_str=talents;
         const bool disabled=disabled_traits.count(id)>0;

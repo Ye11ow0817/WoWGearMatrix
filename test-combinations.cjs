@@ -5,10 +5,14 @@ assert.equal(count([]),0n);assert.equal(count([item('head'),item('head'),item('n
 assert.equal(count([item('head',0,false)]),0n);
 assert.equal(count([item('finger'),item('finger'),item('finger')]),3n);assert.equal(count([item('finger')]),1n);assert.equal(count([item('finger'),item('finger',0,false)]),0n);
 assert.equal(count([item('head',2),item('gem'),item('gem')]),3n); // AA, AB, BB
-assert.equal(count([item('head',2),item('gem'),item('gem'),item('gem',0,true,{uniqueGroup:'diamond'})]),5n);
+assert.equal(count([item('head',2),item('gem'),item('gem'),item('gem',0,true,{uniqueGroup:'diamond'})]),2n);
 assert.equal(count([item('head',2),item('gem',0,true,{uniqueGroup:'diamond'}),item('gem',0,true,{uniqueGroup:'diamond'})]),0n);
+assert.equal(count([item('head',1),item('gem',0,true,{uniqueGroup:'diamond'}),item('gem',0,true,{uniqueGroup:'diamond'})]),2n);
 assert.equal(count([item('head',0),item('head',2),item('gem'),item('gem')]),4n);
 assert.equal(count([item('head'),item('food'),item('food'),item('flask'),item('flask'),item('flask')]),6n);
+assert.equal(count([item('main_hand',0,true,{weaponType:'sword2h_3.60speed'}),item('off_hand',0,true,{weaponType:'shield'})]),1n);
+assert.equal(count([item('main_hand',0,true,{weaponType:'staff_3.50speed'}),item('off_hand',0,true,{weaponType:'none'})]),1n);
+assert.equal(count([item('main_hand',0,true,{weaponType:'sword2h_3.60speed'}),item('main_hand',0,true,{weaponType:'sword_2.60speed'}),item('off_hand'),item('off_hand')]),3n);
 const large=[];for(const slot of ['head','neck','shoulders','back','chest','wrists','hands','waist','legs','feet'])for(let n=0;n<100;n++)large.push(item(slot));assert.equal(count(large),100000000000000000000n);
 // Independent exhaustive enumeration of small fixtures, including pair slots and varying sockets.
 function brute(c){
@@ -18,7 +22,7 @@ function brute(c){
  }
  if(!choices.length)return 0n;
  const gems=c.items.filter(i=>i.slot==='gem'&&i.selected);
- function gemWays(index,left,used){if(!gems.length)return 1n;if(index===gems.length)return left===0?1n:0n;const g=gems[index];let ways=0n;for(let n=0;n<=left;n++){if(g.uniqueGroup&&(n>1||n&&used.has(g.uniqueGroup)))continue;const next=new Set(used);if(n&&g.uniqueGroup)next.add(g.uniqueGroup);ways+=gemWays(index+1,left-n,next);}return ways;}
+ function gemWays(index,left,used){if(!gems.length)return 1n;if(index===gems.length)return left===0&&(!gems.some(g=>g.uniqueGroup)||c.alwaysUseDiamond===false||used.size)?1n:0n;const g=gems[index];let ways=0n;for(let n=0;n<=left;n++){if(g.uniqueGroup&&(n>1||n&&used.size))continue;const next=new Set(used);if(n&&g.uniqueGroup)next.add(g.uniqueGroup);ways+=gemWays(index+1,left-n,next);}return ways;}
  function equipment(index,sockets){if(index===choices.length)return gemWays(0,sockets,new Set());let n=0n;for(const s of choices[index])n+=equipment(index+1,sockets+s);return n;}
  return equipment(0,0);
 }

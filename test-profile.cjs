@@ -15,6 +15,9 @@ function parse(input){
 
 const initial=parse(sample);
 const elemental=parse('shaman="Elemental"\nlevel=90\nrace=human\nspec=elemental\n# wgm_discover_traits=1\n');
+assert.deepEqual(Object.keys(elemental.basePercents),['crit','haste','mastery','versatility','avoidance','leech','speed']);
+for(const [key,value] of Object.entries(elemental.basePercents))assert(Number.isFinite(value)&&value>=0,`SimC base percentage ${key}`);
+assert.equal(elemental.basePercents.versatility,0,'Naked import must not include the default Mark of the Wild raid buff');
 const seer=elemental.traits.find(t=>t.id===136561);
 assert.equal(seer.multiplier.main,1.03);
 assert.equal(seer.enabled,false);

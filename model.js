@@ -1,13 +1,14 @@
 (function (root) {
   'use strict';
-  const slots = [['head','头',1],['neck','项链',1],['shoulders','肩',1],['back','背',1],['chest','胸',1],['wrists','手腕',1],['hands','手',1],['waist','腰',1],['legs','腿',1],['feet','脚',1],['finger','戒指',2],['trinket','饰品',2],['main_hand','主手',1],['off_hand','副手',1],['enchant','附魔',1],['gem','宝石',1],['food','食物',1],['flask','合剂',1]];
+  const slots = [['head','头部',1],['neck','项链',1],['shoulders','肩部',1],['back','背部',1],['chest','胸部',1],['wrists','手腕',1],['hands','手部',1],['waist','腰部',1],['legs','腿部',1],['feet','脚部',1],['finger','戒指',2],['trinket','饰品',2],['main_hand','主手',1],['off_hand','副手',1],['enchant','附魔',1],['gem','宝石',1],['food','食物',1],['flask','合剂',1]];
   const presets = typeof module !== 'undefined' ? require('./presets.js') : root.GearPresets;
   const profileCatalog = typeof module !== 'undefined' ? require('./profile-catalog.js') : root.ProfileCatalog;
   const usageSlot = key => ['enchant','gem','food','flask'].includes(key) || key.startsWith('custom_');
   const stats = [['main','主属性'],['crit','暴击'],['haste','急速'],['mastery','精通'],['versatility','全能']];
-  const itemStats=[['armor','护甲'],['stamina','耐力'],...stats,['avoidance','闪避'],['leech','吸血'],['speed','加速']];
+  const percentStats=['crit','haste','mastery','versatility','avoidance','leech','speed'];
+  const itemStats=[['stamina','耐力'],['armor','护甲'],...stats,['avoidance','闪避'],['leech','吸血'],['speed','加速']];
   const tierSlots=['head','shoulders','chest','legs','hands'];
-  const enchantSlots=[['head','头'],['shoulders','肩'],['chest','胸'],['legs','腿'],['feet','脚'],['finger','戒指'],['weapon','武器']];
+  const enchantSlots=[['head','头部'],['shoulders','肩部'],['chest','胸部'],['legs','腿部'],['feet','脚部'],['finger','戒指'],['weapon','武器']];
   function displayStats(i){
     const secondary=stats.slice(1).sort((a,b)=>(i.stats[b[0]]||0)-(i.stats[a[0]]||0));
     return [...itemStats.slice(0,3),...secondary,...itemStats.slice(-3)].filter(([k])=>i.stats[k]);
@@ -17,7 +18,7 @@
     if(!i.locked&&c.items.filter(x=>x.slot===i.slot&&x.locked).length>=2)throw Error('每个栏位最多锁定 2 件，请先解锁其他项目');
     i.locked=!i.locked;if(i.locked)i.selected=true;
   }
-  function toggleSelected(i){if(i.locked)throw Error('请先解锁，再取消候选');i.selected=!i.selected;}
+  function toggleSelected(c,i){if(i.locked)throw Error('请先解锁，再取消候选');i.selected=!i.selected;}
   const types = { strength:'力量', agility:'敏捷', intellect:'智力' };
   const classes={warrior:['arms','fury','protection'],paladin:['holy','protection','retribution'],hunter:['beast_mastery','marksmanship','survival'],rogue:['assassination','outlaw','subtlety'],priest:['discipline','holy','shadow'],death_knight:['blood','frost','unholy'],shaman:['elemental','enhancement','restoration'],mage:['arcane','fire','frost'],warlock:['affliction','demonology','destruction'],monk:['brewmaster','mistweaver','windwalker'],druid:['balance','feral','guardian','restoration'],demon_hunter:['devourer','havoc','vengeance'],evoker:['devastation','preservation','augmentation']};
   const races=['human','orc','dwarf','night_elf','undead','forsaken','tauren','gnome','troll','goblin','blood_elf','draenei','dark_iron_dwarf','vulpera','maghar_orc','mechagnome','dracthyr','dracthyr_alliance','dracthyr_horde','earthen','earthen_dwarf','earthen_alliance','earthen_horde','haranir','harronir','haranir_alliance','haranir_horde','worgen','pandaren','pandaren_alliance','pandaren_horde','nightborne','highmountain_tauren','void_elf','lightforged_draenei','zandalari_troll','kul_tiran'];
@@ -27,7 +28,7 @@
   const mainTypeFor=(cls,spec)=>({warrior:'strength',death_knight:'strength',hunter:'agility',rogue:'agility',mage:'intellect',priest:'intellect',warlock:'intellect',evoker:'intellect'})[cls] || (cls==='demon_hunter' ? (spec==='devourer'?'intellect':'agility') : cls==='paladin' ? (spec==='holy'?'intellect':'strength') : cls==='shaman' ? (spec==='enhancement'?'agility':'intellect') : cls==='druid' ? (['feral','guardian'].includes(spec)?'agility':'intellect') : cls==='monk' ? (spec==='mistweaver'?'intellect':'agility') : 'strength');
   const id = () => globalThis.crypto.randomUUID();
   const emptyStats = () => Object.fromEntries(stats.map(([k]) => [k, null]));
-  const newCharacter = (name = '新角色') => {const c=ensurePresets({id:id(),name,renamed:false,input:'',report:'',items:[],customSlots:[],baseStats:emptyStats(),mainType:'strength',filters:{},sort:{},importInfo:''});selectProfile(c,{class:'warrior',spec:'arms',race:'human'});return c;};
+  const newCharacter = (name = '新角色') => {const c=ensurePresets({id:id(),name,renamed:false,input:'',report:'',items:[],customSlots:[],baseStats:emptyStats(),mainType:'strength',filters:{},sort:{},importInfo:'',alwaysUseDiamond:true});selectProfile(c,{class:'warrior',spec:'arms',race:'human'});return c;};
   const newState = () => { const c = newCharacter('角色 1'); return {version:2,activeId:c.id,characters:[c]}; };
   const getSlots=c=>[...slots,...(c.customSlots||[]).map(s=>[s.id,s.name,1])];
   function checkSlotName(c,name,exceptId){
@@ -51,6 +52,10 @@
     for (const c of s.characters) {
       if (!c || typeof c.id !== 'string' || ids.has(c.id) || typeof c.name !== 'string' || !c.name.trim() || c.name.length > 80 || !Array.isArray(c.items) || c.items.length > 3000 || typeof c.input !== 'string' || typeof c.report !== 'string' || !types[c.mainType]) throw Error('角色数据损坏');
       ids.add(c.id);
+      if(c.alwaysUseDiamond!==undefined&&typeof c.alwaysUseDiamond!=='boolean')throw Error('钻石始终使用选项无效');
+      if(c.resultPercent!==undefined&&typeof c.resultPercent!=='boolean')throw Error('结果百分比选项无效');
+      if(c.basePercents!==undefined&&(!c.basePercents||typeof c.basePercents!=='object'||Array.isArray(c.basePercents)||percentStats.some(key=>c.basePercents[key]!==null&&c.basePercents[key]!==undefined&&(!Number.isFinite(c.basePercents[key])||c.basePercents[key]<0||c.basePercents[key]>10000))))throw Error('基础属性百分比无效');
+      if(c.ratingOverrides!==undefined&&(!c.ratingOverrides||typeof c.ratingOverrides!=='object'||Array.isArray(c.ratingOverrides)||Object.entries(c.ratingOverrides).some(([key,value])=>!['crit','haste','mastery','versatility','avoidance','leech','speed'].includes(key)||!Number.isFinite(value)||value<=0||value>1000000)))throw Error('属性换算比例无效');
       if(!Array.isArray(c.customSlots)||c.customSlots.length>30)throw Error('自定义栏位格式无效');
       const slotIds=new Set(),slotNames=new Set(slots.map(s=>s[1].toLowerCase()));
       for(const slot of c.customSlots){
@@ -70,13 +75,17 @@
       if(c.traits!==undefined&&!Array.isArray(c.traits))throw Error('天赋资料无效');
       enrichProfileData(c);
       ensurePresets(c);
+      delete c.diamondLockInitialized;
       if(c.items.length>3000)throw Error('每个角色最多保存 3000 个项目（含预设）');
       const items = new Set();
       for (const i of c.items) {
         if(!tierSlots.includes(i.slot)){i.set=false;i.setId=0;}
+        if(i.boe===undefined)i.boe=false;
+        if(usageSlot(i.slot))i.boe=false;
         if(i.setGroup!==undefined&&(typeof i.setGroup!=='string'||i.setGroup.length>80))throw Error('套装分组须为 80 字以内文本');
         i.stats={...zeroStats(),...i.stats};
         if(i.locked!==undefined&&typeof i.locked!=='boolean')throw Error('锁定状态无效');
+        if(i.slot==='gem')delete i.locked;
         if(i.locked){if(!['finger','trinket'].includes(i.slot))throw Error('该栏位不支持锁定');i.selected=true;}
         if(i.slot==='enchant'&&!enchantSlots.some(([k])=>k===i.enchantSlot))throw Error('附魔部位无效');
         if(i.socketCount!==undefined&&(!Number.isInteger(i.socketCount)||i.socketCount<0||i.socketCount>10))throw Error('装备孔位数量须为 0–10 的整数');
@@ -84,7 +93,7 @@
         if(typeof i.selected!=='boolean')throw Error('装备选择状态无效');
         const slot = getSlots(c).find(([k]) => k === i.slot);
         if (!slot || typeof i.id !== 'string' || items.has(i.id) || typeof i.name !== 'string' || !i.name.trim() || i.name.length > 200 || !Number.isInteger(i.ilevel) || i.ilevel < 0 || i.ilevel > 10000 || !types[i.mainType] || !['import','custom'].includes(i.origin)) throw Error('装备数据格式无效');
-        for (const flag of ['socket','embellishment','set']) if (typeof i[flag] !== 'boolean') throw Error('装备标记格式无效');
+        for (const flag of ['socket','embellishment','boe','set']) if (typeof i[flag] !== 'boolean') throw Error('装备标记格式无效');
         for (const [k] of itemStats) if (!Number.isFinite(i.stats?.[k]) || i.stats[k] < 0 || i.stats[k] > 10000000) throw Error('装备属性格式无效');
         items.add(i.id);
       }
@@ -118,6 +127,7 @@
     const values=parseValues(report.match(/^character_stats: (.*)$/m)?.[1]);
     const raw=parseValues(report.match(/^raw_character: (.*)$/m)?.[1]);
     const factors=parseValues(report.match(/^character_factors: (.*)$/m)?.[1]);
+    const percents=parseValues(report.match(/^character_percent: (.*)$/m)?.[1]);
     const response=parseValues(report.match(/^character_response: (.*)$/m)?.[1]);
     const toStats=v=>({armor:v.armor||0,stamina:v.stamina||0,main:v[mainType]||0,crit:v.crit_rating||0,haste:v.haste_rating||0,mastery:v.mastery_rating||0,versatility:v.versatility_rating||0,avoidance:v.avoidance_rating||0,leech:v.leech_rating||0,speed:v.speed_rating||0});
     const effects=new Map([...report.matchAll(/^trait_effect: id=(\d+) \| stats: (.*)$/gm)].map(m=>[Number(m[1]),toStats(parseValues(m[2]))]));
@@ -126,7 +136,7 @@
     const spellEffects=new Map([...report.matchAll(/^trait_spell: id=(\d+) \| rank=(\d+)(.*)$/gm)].map(m=>[Number(m[1]),parseValues(m[3])]));
     const traitResponses=new Map([...report.matchAll(/^trait_response: id=(\d+) \| (.*)$/gm)].map(m=>[Number(m[1]),parseValues(m[2])]));
     const traits=[...report.matchAll(/^trait: id=(\d+) \| (?:spell=(\d+) \| )?name=(.*?) \| rank=(\d+) \| enabled=([01])(?: \| origin=(import|manual|available))?$/gm)].map(m=>({id:Number(m[1]),spellId:Number(m[2]||0),name:m[3],rank:Number(m[4]),enabled:m[5]==='1',origin:m[6]||'import',effect:effects.get(Number(m[1]))||zeroStats(),multiplier:multipliers.get(Number(m[1]))||{},probe:probes.get(Number(m[1]))||zeroStats(),spellEffects:spellEffects.get(Number(m[1]))||{},response:traitResponses.get(Number(m[1]))||{}})).filter(t=>itemStats.some(([k])=>t.effect[k]||t.probe[k]||t.multiplier[k]&&Math.abs(t.multiplier[k]-1)>0.00001));
-    const result = {name:character?.[1] || '',attributeContext:{class:cls||'',spec:spec||'',level:Number(character?.[4]||0),race:context?.[1]||'',talents:context?.[2]||'',dataVersion},baseStats:Object.keys(values).length?toStats(values):null,rawStats:Object.keys(raw).length?toStats(raw):null,attributeFactors:Object.keys(factors).length?toStats(factors):null,attributeResponse:Object.keys(response).length?response:null,traits,items:[],skipped:0,failed:0,warnings:[]};
+    const result = {name:character?.[1] || '',attributeContext:{class:cls||'',spec:spec||'',level:Number(character?.[4]||0),race:context?.[1]||'',talents:context?.[2]||'',dataVersion},baseStats:Object.keys(values).length?toStats(values):null,basePercents:Object.keys(percents).length?Object.fromEntries(percentStats.map(key=>[key,percents[key]??null])):null,rawStats:Object.keys(raw).length?toStats(raw):null,attributeFactors:Object.keys(factors).length?toStats(factors):null,attributeResponse:Object.keys(response).length?response:null,traits,items:[],skipped:0,failed:0,warnings:[]};
     const blocks = report.split(/\n(?=\[\d+\] )/).slice(1);
     for (const block of blocks) {
       const header = block.match(/^\[\d+\] (.*?) \/ (\w+) \/ (.*)/);
@@ -150,15 +160,21 @@
     return {...c.baseStats};
   }
   function upsert(c,item){
+    if(item.origin==='custom'&&item.source==='custom'&&c.items.some(i=>i.id!==item.id&&i.slot===item.slot&&(item.slot!=='enchant'||i.enchantSlot===item.enchantSlot)&&i.name.trim().toLocaleLowerCase()===item.name.trim().toLocaleLowerCase()))throw Error('目标栏位已有同名物品');
     delete item.position;if(!tierSlots.includes(item.slot)){item.set=false;item.setId=0;}
     const index=c.items.findIndex(i=>i.id===item.id);
     if(index<0)c.items.push(item);else c.items[index]=item;
+  }
+  function removeCustomItem(c,itemId){
+    const index=c.items.findIndex(i=>i.id===itemId&&i.origin==='custom'&&i.source==='custom');
+    if(index<0)throw Error('只能删除用户创建的自定义物品');
+    c.items.splice(index,1);
   }
   function applyImport(c,result,report){
     ensurePresets(c);
     const identity=JSON.stringify({name:result.name||'',...result.attributeContext});
     const changed=c.mainType!==result.mainType || (c.importIdentity&&c.importIdentity!==identity);
-    if(result.baseStats){c.rawBaseStats=result.rawStats;c.naturalRawStats={...result.rawStats};c.manualRawAdjustment=zeroStats();c.attributeFactors=result.attributeFactors;c.attributeResponse=result.attributeResponse;c.responseBaseStats={main:result.rawStats.main,mastery:result.rawStats.mastery};c.responseBaseFactors={main:result.attributeFactors.main,mastery:result.attributeFactors.mastery};c.baseStats=result.baseStats;c.attributeContext=result.attributeContext;c.traits=result.traits;c.disabledTraits=[];c.enabledTraits=[];c.attributeOffset=Object.fromEntries(itemStats.map(([k])=>[k,(result.baseStats[k]||0)-statRound(k,(result.rawStats[k]||0)*(result.attributeFactors[k]||1))]));}
+    if(result.baseStats){c.rawBaseStats=result.rawStats;c.naturalRawStats={...result.rawStats};c.manualRawAdjustment=zeroStats();c.attributeFactors=result.attributeFactors;c.attributeResponse=result.attributeResponse;c.responseBaseStats={main:result.rawStats.main,mastery:result.rawStats.mastery};c.responseBaseFactors={main:result.attributeFactors.main,mastery:result.attributeFactors.mastery};c.baseStats=result.baseStats;c.basePercents=result.basePercents||(!changed?c.basePercents:null)||Object.fromEntries(percentStats.map(key=>[key,null]));c.attributeContext=result.attributeContext;c.traits=result.traits;c.disabledTraits=[];c.enabledTraits=[];c.attributeOffset=Object.fromEntries(itemStats.map(([k])=>[k,(result.baseStats[k]||0)-statRound(k,(result.rawStats[k]||0)*(result.attributeFactors[k]||1))]));}
     else if(changed)c.baseStats=emptyStats();
     c.importIdentity=identity;
     const fingerprint=i=>JSON.stringify([i.slot,i.itemId,i.ilevel,itemStats.map(([k])=>i.stats?.[k]||0)]);
@@ -183,13 +199,13 @@
       for(const i of c.items.filter(i=>i.slot==='enchant'&&i.presetId))i.selected=selected.has(i.enchantId);
     }
     if(!c.renamed&&result.name)c.name=result.name.slice(0,80);
-    c.importInfo=`已导入 ${result.items.length} 件装备；忽略 ${result.skipped} 件；失败 ${result.failed} 件。`+(result.baseStats?'基础属性已按 SimC 计算。':changed?'角色信息变化，请重新填写基础属性。':'已保留填写的基础属性。');
+    c.importInfo=`已导入 ${result.items.length} 件装备；忽略 ${result.skipped} 件；失败 ${result.failed} 件。`+(result.baseStats?'基础属性已按 SimC 计算。':changed?'角色信息变化，请重新填写基础属性。':'已保留填写的基础属性。')+(result.baseStats&&!result.basePercents?'导入数据未提供基础百分比，请手动填写。':'');
   }
   function applyProfile(c,result){
     if(!result.baseStats||!result.rawStats)throw Error('SimC 未返回角色基础属性');
     const oldContext=c.attributeContext||{},sameTalents=oldContext.class===result.attributeContext.class&&oldContext.spec===result.attributeContext.spec&&oldContext.talents===result.attributeContext.talents;
     const oldTraits=new Map((sameTalents?c.traits||[]:[]).map(t=>[t.id,t]));
-    c.attributeContext=result.attributeContext;c.rawBaseStats=result.rawStats;c.attributeFactors=result.attributeFactors;c.attributeResponse=result.attributeResponse;c.responseBaseStats={main:result.rawStats.main,mastery:result.rawStats.mastery};c.responseBaseFactors={main:result.attributeFactors.main,mastery:result.attributeFactors.mastery};c.baseStats=result.baseStats;c.mainType=result.mainType;
+    c.attributeContext=result.attributeContext;c.rawBaseStats=result.rawStats;c.attributeFactors=result.attributeFactors;c.attributeResponse=result.attributeResponse;c.responseBaseStats={main:result.rawStats.main,mastery:result.rawStats.mastery};c.responseBaseFactors={main:result.attributeFactors.main,mastery:result.attributeFactors.mastery};c.baseStats=result.baseStats;c.basePercents=result.basePercents||((oldContext.class===result.attributeContext.class&&oldContext.spec===result.attributeContext.spec&&oldContext.race===result.attributeContext.race)?c.basePercents:null)||Object.fromEntries(percentStats.map(key=>[key,null]));c.mainType=result.mainType;
     c.traits=[...result.traits];
     for(const id of c.disabledTraits||[])if(oldTraits.has(id)&&!c.traits.some(t=>t.id===id))c.traits.push({...oldTraits.get(id),enabled:false});
     const imported=c.items.filter(i=>i.origin==='import');
@@ -251,6 +267,7 @@
     c.attributeContext={...old,class:cls,spec,race,level:90,talents:old.class===cls&&old.spec===spec?(old.talents||''):'',dataVersion:entry?.dataVersion||old.dataVersion||''};
     c.mainType=mainTypeFor(cls,spec);
     const changedProfile=old.class!==cls||old.spec!==spec||!c.traits;
+    if(changedProfile)c.basePercents=Object.fromEntries(percentStats.map(key=>[key,null]));
     if(entry&&changedProfile){
       c.traits=structuredClone(entry.traits);
       c.attributeFactors={...entry.attributeFactors};
@@ -384,6 +401,7 @@
   const candidates=c=>c.items.filter(i=>i.selected===true);
   function zeroStats(){return Object.fromEntries(itemStats.map(([k])=>[k,0]));}
   function ensurePresets(c){
+    c.items=c.items.filter(i=>!['enchant-8009','enchant-8007'].includes(i.presetId));
     for(const p of presets.items)if(!c.items.some(i=>i.presetId===p.presetId)){
       c.items.push({...p,id:id(),origin:'custom',source:'preset',selected:false,mainType:p.supportedMainTypes?.length===1?p.supportedMainTypes[0]:c.mainType,adaptiveMain:!p.supportedMainTypes?.length,stats:{...zeroStats(),...p.stats},socket:false,embellishment:false,set:false});
     }
@@ -395,6 +413,7 @@
     return null;
   }
   const sockets=i=>i.socketCount??(i.socket?1:0);
+  const twoHanded=i=>i.slot==='main_hand'&&/^(?:sword2h|axe2h|mace2h|staff|polearm|bow|gun|crossbow)(?:_|$)/i.test(i.weaponType||'');
   function convolve(a,b){
     const out=new Map();
     for(const [x,n]of a)for(const [y,m]of b)out.set(x+y,(out.get(x+y)||0n)+n*m);
@@ -421,13 +440,33 @@
     let distribution=new Map([[0,1n]]),equipmentDistribution=new Map([[0,1n]]),hasEquipment=false;
     const missing=[];
     for(const [key,label,capacity]of getSlots(c).filter(([key])=>!usageSlot(key))){
+      if(key==='off_hand'&&c.items.some(i=>i.slot==='main_hand'))continue;
       const all=c.items.filter(i=>i.slot===key);if(!all.length)continue;
       hasEquipment=true;
       const selected=all.filter(i=>i.selected),take=Math.min(capacity,all.length);
       if(key==='off_hand'&&!selected.length)continue;
       if(selected.length<take){missing.push(`${label}需选 ${take} 件`);continue;}
-      equipmentDistribution=convolve(equipmentDistribution,slotChoices(selected,take));
-      distribution=convolve(distribution,slotChoices(selected,take,i=>enchantChoices(c,i)));
+      if(key==='main_hand'){
+        const off=c.items.filter(i=>i.slot==='off_hand'&&i.selected);
+        const weaponChoices=weight=>{
+          const out=new Map();
+          for(const main of selected){
+            const offChoices=twoHanded(main)||!off.length?[null]:off;
+            for(const extra of offChoices){
+              const items=extra?[main,extra]:[main];
+              const sockets=items.reduce((n,i)=>n+(i.socketCount??(i.socket?1:0)),0);
+              const ways=items.reduce((n,i)=>n*weight(i),1n);
+              out.set(sockets,(out.get(sockets)||0n)+ways);
+            }
+          }
+          return out;
+        };
+        equipmentDistribution=convolve(equipmentDistribution,weaponChoices(()=>1n));
+        distribution=convolve(distribution,weaponChoices(i=>enchantChoices(c,i)));
+      }else{
+        equipmentDistribution=convolve(equipmentDistribution,slotChoices(selected,take));
+        distribution=convolve(distribution,slotChoices(selected,take,i=>enchantChoices(c,i)));
+      }
     }
     if(!hasEquipment||!c.items.some(i=>!usageSlot(i.slot)&&i.selected)||missing.length)return {total:0n,equipment:0n,missing,hasEquipment};
     const equipment=[...equipmentDistribution.values()].reduce((a,b)=>a+b,0n);
@@ -435,7 +474,8 @@
     for(const [key]of getSlots(c).filter(([key])=>usageSlot(key)&&!['gem','enchant'].includes(key)))consumables*=BigInt(Math.max(1,c.items.filter(i=>i.slot===key&&i.selected).length));
     const gems=c.items.filter(i=>i.slot==='gem'&&i.selected),ordinary=gems.filter(i=>!i.uniqueGroup).length;
     const uniqueGroups=new Map();for(const i of gems)if(i.uniqueGroup)uniqueGroups.set(i.uniqueGroup,(uniqueGroups.get(i.uniqueGroup)||0n)+1n);
-    let uniqueWays=new Map([[0,1n]]);for(const count of uniqueGroups.values())uniqueWays=convolve(uniqueWays,new Map([[0,1n],[1,count]]));
+    const diamondCount=[...uniqueGroups.values()].reduce((sum,count)=>sum+count,0n);
+    const uniqueWays=diamondCount?new Map(c.alwaysUseDiamond===false?[[0,1n],[1,diamondCount]]:[[1,diamondCount]]):new Map([[0,1n]]);
     const maxSockets=Math.max(...distribution.keys());
     // Fill all sockets: C(g + n - 1, n), unordered with repetition.
     const ordinaryWays=[1n];for(let n=1;n<=maxSockets;n++)ordinaryWays[n]=ordinaryWays[n-1]*BigInt(ordinary+n-1)/BigInt(n);
@@ -444,7 +484,7 @@
       let gemWays=gems.length?0n:1n;if(gems.length)for(const [used,ways]of uniqueWays)if(used<=n)gemWays+=ways*ordinaryWays[n-used];
       total+=equipmentWays*gemWays;
     }
-    if(!total&&gems.length)missing.push('所选宝石无法填满孔位，请增加普通宝石候选');
+    if(!total&&gems.length)missing.push(diamondCount&&c.alwaysUseDiamond!==false&&!maxSockets?'已选钻石需要至少一个孔位':'所选宝石无法填满孔位，请增加普通宝石候选');
     return {total:total*consumables,equipment,missing,hasEquipment};
   }
   // SimC exports bags/bank as commented rows. Only successfully parsed worn rows count.
@@ -477,6 +517,6 @@
     validateState({version:2,activeId:c.id,characters:[c]});
     s.closedCharacters.pop();s.characters.push(c);s.activeId=c.id;return true;
   }
-  const api={tierSlots,itemStats,displayStats,toggleLock,toggleSelected,enchantSlots,enchantPool,enchantChoices,presets,ensurePresets,usageSlot,gemGroups,gemGroup,combinationCount,attachEquippedGems,getSlots,addSlot,renameSlot,candidates,closeCharacter,reopenCharacter,slots,stats,types,classes,races,raceGroups,classLabels,specLabels,mainTypeFor,id,emptyStats,newCharacter,newState,validateState,parseReport,baseline,upsert,applyImport,applyProfile,editDisplayedStat,selectProfile,toggleTrait,traitDescription,scaledStat,scaledStats,prepareProfileInput};
+  const api={tierSlots,itemStats,displayStats,toggleLock,toggleSelected,enchantSlots,enchantPool,enchantChoices,twoHanded,presets,ensurePresets,usageSlot,gemGroups,gemGroup,combinationCount,attachEquippedGems,getSlots,addSlot,renameSlot,candidates,closeCharacter,reopenCharacter,slots,stats,types,classes,races,raceGroups,classLabels,specLabels,mainTypeFor,id,emptyStats,newCharacter,newState,validateState,parseReport,baseline,upsert,removeCustomItem,applyImport,applyProfile,editDisplayedStat,selectProfile,toggleTrait,traitDescription,scaledStat,scaledStats,prepareProfileInput};
   if(typeof module !== 'undefined')module.exports=api; else root.GearModel=api;
 })(globalThis);

@@ -768,36 +768,6 @@ const data={
       "itemId": 243969
     },
     {
-      "presetId": "enchant-8009",
-      "enchantId": 8009,
-      "name": "附魔武器 - 世界之魂的庇护",
-      "englishName": "Enchant Weapon - Worldsoul Aegis",
-      "slot": "enchant",
-      "enchantSlot": "weapon",
-      "ilevel": 0,
-      "quality": 2,
-      "stats": {},
-      "minItemLevel": 120,
-      "effectNote": "触发吸收护盾",
-      "supportedMainTypes": [],
-      "itemId": 243999
-    },
-    {
-      "presetId": "enchant-8007",
-      "enchantId": 8007,
-      "name": "附魔武器 - 世界之魂的摇篮",
-      "englishName": "Enchant Weapon - Worldsoul Cradle",
-      "slot": "enchant",
-      "enchantSlot": "weapon",
-      "ilevel": 0,
-      "quality": 2,
-      "stats": {},
-      "minItemLevel": 120,
-      "effectNote": "治疗触发吸收护盾",
-      "supportedMainTypes": [],
-      "itemId": 243997
-    },
-    {
       "presetId": "enchant-8011",
       "enchantId": 8011,
       "name": "附魔武器 - 世界之魂的坚韧",

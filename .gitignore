@@ -7,3 +7,5 @@ engine/simc-source/
 .env.*
 !.env.example
 *.log
+
+build-workspace-test/

@@ -10,7 +10,7 @@ module.exports=async({win,storage,output})=>{
  const character=()=>{const s=storage.load();return s.characters.find(c=>c.id===s.activeId);};
  await wait(`!document.querySelector('#app').hidden`);await saved();
  await fill('#input','shaman="Percent UI"\nlevel=90\nrace=orc\nspec=elemental\n');await click('#parse');
- await wait(`document.querySelector('#parse').textContent==='导入'`);await saved();
+ await wait(`!document.querySelector('#parse').disabled`);await saved();
  assert.equal(character().attributeContext.class,'shaman');
  assert.deepEqual(Object.keys(character().basePercents),R.keys);
  const importedPercents={...character().basePercents};
@@ -101,7 +101,7 @@ module.exports=async({win,storage,output})=>{
  await js(`document.querySelector('#results-section').scrollIntoView({block:'start'})`);
  await js(`new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);
  fs.writeFileSync(path.join(output,'base-percent-results.png'),(await win.webContents.capturePage()).toPNG());
- await click('#parse');await wait(`document.querySelector('#parse').textContent==='导入'`);await saved();
+ await click('#parse');await wait(`!document.querySelector('#parse').disabled`);await saved();
  assert.deepEqual(character().basePercents,importedPercents);
  fs.writeFileSync(path.join(output,'base-percent-pass.txt'),'PASS: real SimC import, seven base/result percentages, sheet-percent filters, integer rating bounds, native spinner and keyboard default steps.');
 };

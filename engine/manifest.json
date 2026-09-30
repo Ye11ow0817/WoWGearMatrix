@@ -4,10 +4,10 @@
   "gameData": "12.1.0.69814",
   "runtime": "Node.js + WebAssembly",
   "sha256": {
-    "gear-resolver.wasm": "56b15425af46c702e896b77c63faf55e5c8ce3cfcf1a012856b31175a3f9077c",
+    "gear-resolver.wasm": "6253db36eb997bf731819a9a8da9528144307fa0ce1b661d7f6fe60d9a55109a",
     "gear-resolver.js": "a022a39a0cd8d35ec8da8be15560ecc51bc68b483930fd7e242836bf789ab8f9",
-    "gear_resolver.cpp": "637e92e09f2409c9eed3f9f0cf6e38442be7f373561eaa6fbe073109ca4f88e0",
+    "gear_resolver.cpp": "8a1e4e88ee770340abe7246964b57862788ccc11aa7893abb82d03dc354d119d",
     "simc-source.zip": "4e4eb957c089ad1ba6f8b81dfca32f8af912ac126a8269898ee2b1710cbf3ef1"
   },
-  "adapterRevision": "0.3.3 - seven naked character percentages; raid buffs disabled"
+  "adapterRevision": "0.3.3 - seven naked character percentages; raid buffs disabled; embellishments use equip-limit category 512"
 }

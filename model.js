@@ -3,6 +3,7 @@
   const slots = [['head','头部',1],['neck','项链',1],['shoulders','肩部',1],['back','背部',1],['chest','胸部',1],['wrists','手腕',1],['hands','手部',1],['waist','腰部',1],['legs','腿部',1],['feet','脚部',1],['finger','戒指',2],['trinket','饰品',2],['main_hand','主手',1],['off_hand','副手',1],['enchant','附魔',1],['gem','宝石',1],['food','食物',1],['flask','合剂',1]];
   const presets = typeof module !== 'undefined' ? require('./presets.js') : root.GearPresets;
   const profileCatalog = typeof module !== 'undefined' ? require('./profile-catalog.js') : root.ProfileCatalog;
+  const detailSlot=key=>!['enchant','gem','food','flask'].includes(key);
   const usageSlot = key => ['enchant','gem','food','flask'].includes(key) || key.startsWith('custom_');
   const stats = [['main','主属性'],['crit','暴击'],['haste','急速'],['mastery','精通'],['versatility','全能']];
   const percentStats=['crit','haste','mastery','versatility','avoidance','leech','speed'];
@@ -46,6 +47,11 @@
     const entry=c.customSlots?.find(s=>s.id===key);if(!entry)throw Error('只能修改自定义栏位名称');
     entry.name=checkSlotName(c,name,key);
   }
+  function removeSlot(c,key){
+    if(!c.customSlots?.some(s=>s.id===key))throw Error('只能删除自定义栏位');
+    c.customSlots=c.customSlots.filter(s=>s.id!==key);
+    c.items=c.items.filter(i=>i.slot!==key);
+  }
   function validateState(s) {
     if (!s || s.version !== 2 || !Array.isArray(s.characters) || !s.characters.length || s.characters.length > 100) throw Error('角色数据格式无效');
     const ids = new Set();
@@ -54,6 +60,7 @@
       ids.add(c.id);
       if(c.alwaysUseDiamond!==undefined&&typeof c.alwaysUseDiamond!=='boolean')throw Error('钻石始终使用选项无效');
       if(c.resultPercent!==undefined&&typeof c.resultPercent!=='boolean')throw Error('结果百分比选项无效');
+      if(c.customTagNames!==undefined&&(!Array.isArray(c.customTagNames)||c.customTagNames.length>200||c.customTagNames.some(name=>typeof name!=='string'||!name.trim()||name!==name.trim()||name.length>40)||new Set(c.customTagNames).size!==c.customTagNames.length))throw Error('自定义标签列表格式无效');
       if(c.basePercents!==undefined&&(!c.basePercents||typeof c.basePercents!=='object'||Array.isArray(c.basePercents)||percentStats.some(key=>c.basePercents[key]!==null&&c.basePercents[key]!==undefined&&(!Number.isFinite(c.basePercents[key])||c.basePercents[key]<0||c.basePercents[key]>10000))))throw Error('基础属性百分比无效');
       if(c.ratingOverrides!==undefined&&(!c.ratingOverrides||typeof c.ratingOverrides!=='object'||Array.isArray(c.ratingOverrides)||Object.entries(c.ratingOverrides).some(([key,value])=>!['crit','haste','mastery','versatility','avoidance','leech','speed'].includes(key)||!Number.isFinite(value)||value<=0||value>1000000)))throw Error('属性换算比例无效');
       if(!Array.isArray(c.customSlots)||c.customSlots.length>30)throw Error('自定义栏位格式无效');
@@ -79,9 +86,10 @@
       if(c.items.length>3000)throw Error('每个角色最多保存 3000 个项目（含预设）');
       const items = new Set();
       for (const i of c.items) {
-        if(!tierSlots.includes(i.slot)){i.set=false;i.setId=0;}
+        if(!detailSlot(i.slot)){i.set=false;i.setId=0;}
         if(i.boe===undefined)i.boe=false;
-        if(usageSlot(i.slot))i.boe=false;
+        if(i.customTags!==undefined&&(!Array.isArray(i.customTags)||i.customTags.length>20||i.customTags.some(name=>typeof name!=='string'||!name.trim()||name!==name.trim()||name.length>40)||new Set(i.customTags).size!==i.customTags.length))throw Error('自定义标签须为不重复的 1–40 字文本，每件装备最多 20 个');
+        if(!detailSlot(i.slot))i.boe=false;
         if(i.setGroup!==undefined&&(typeof i.setGroup!=='string'||i.setGroup.length>80))throw Error('套装分组须为 80 字以内文本');
         i.stats={...zeroStats(),...i.stats};
         if(i.locked!==undefined&&typeof i.locked!=='boolean')throw Error('锁定状态无效');
@@ -98,6 +106,9 @@
         items.add(i.id);
       }
       for(const key of ['finger','trinket'])if(c.items.filter(i=>i.slot===key&&i.locked).length>2)throw Error('每个栏位最多锁定 2 件');
+      migrateBoe(c);
+      c.customTagNames=[...new Set([...(c.customTagNames||[]),...c.items.filter(i=>detailSlot(i.slot)).flatMap(i=>i.customTags||[])])];
+      ensureTagColors(c);
     }
     if (!ids.has(s.activeId)) throw Error('当前角色不存在');
     return s;
@@ -161,14 +172,55 @@
   }
   function upsert(c,item){
     if(item.origin==='custom'&&item.source==='custom'&&c.items.some(i=>i.id!==item.id&&i.slot===item.slot&&(item.slot!=='enchant'||i.enchantSlot===item.enchantSlot)&&i.name.trim().toLocaleLowerCase()===item.name.trim().toLocaleLowerCase()))throw Error('目标栏位已有同名物品');
-    delete item.position;if(!tierSlots.includes(item.slot)){item.set=false;item.setId=0;}
-    const index=c.items.findIndex(i=>i.id===item.id);
+    delete item.position;if(!detailSlot(item.slot)){item.set=false;item.setId=0;}
+    const previous=tagColumns(c).map(([key])=>key),index=c.items.findIndex(i=>i.id===item.id);
     if(index<0)c.items.push(item);else c.items[index]=item;
+    c.customTagNames=[...new Set([...(c.customTagNames||previous.map(key=>decodeURIComponent(key.slice(4)))),...(item.customTags||[])])];
+    syncTagSettings(c,previous);
   }
   function removeCustomItem(c,itemId){
     const index=c.items.findIndex(i=>i.id===itemId&&i.origin==='custom'&&i.source==='custom');
     if(index<0)throw Error('只能删除用户创建的自定义物品');
     c.items.splice(index,1);
+    syncTagSettings(c);
+  }
+  const tagKey=name=>'tag:'+encodeURIComponent(name);
+  function migrateBoe(c){
+    const key=tagKey('BOE'),assigned=c.items.filter(item=>item.boe&&detailSlot(item.slot)),referenced=c.resultColumns?.includes('boe')||c.sort?.rules?.some(rule=>rule.type==='stat'&&rule.stat==='boe')||c.filters?.counts?.boe!==undefined||c.filters?.boe!==undefined;
+    if(assigned.length||referenced)c.customTagNames=[...new Set([...(c.customTagNames||[]),'BOE'])];
+    for(const item of assigned){item.customTags=[...new Set([...(item.customTags||[]),'BOE'])];item.boe=false;}
+    if(Array.isArray(c.resultColumns))c.resultColumns=[...new Set(c.resultColumns.map(column=>column==='boe'?key:column))];
+    for(const rule of c.sort?.rules||[])if(rule.type==='stat'&&rule.stat==='boe')rule.stat=key;
+    if(c.filters?.counts?.boe!==undefined){c.filters.counts[key]??=c.filters.counts.boe;delete c.filters.counts.boe;}
+    if(c.filters?.boe!==undefined){const value=c.filters.boe;c.filters.counts??={};c.filters.counts[key]??=value==null||value===''?{}:{min:value,max:value};delete c.filters.boe;}
+  }
+  const presetTagColors={tier:'#ffd166',embellishment:'#b58cff',embellishments:'#b58cff'};
+  const tagPalette=['#ff7b89','#6ab8ff','#a9df62','#ffab66','#61dde8','#f58ed6','#e0c486','#8da0f2','#f2b4a0','#91cba6','#d8daf2','#d99168','#68a6b8','#d8a83d','#da7db5','#84b477','#a7cfff','#eddf97','#b4a18a','#c2e5da'];
+  function tagColor(c,name){
+    const names=tagColumns(c).map(([,label])=>label),colors=c.customTagColors||{};
+    if(Object.hasOwn(colors,name)&&tagPalette.includes(colors[name]))return colors[name];
+    const pending=names.filter(label=>!Object.hasOwn(colors,label)||!tagPalette.includes(colors[label])),next=Number.isInteger(c.customTagColorNext)?c.customTagColorNext:0;
+    return tagPalette[(next+Math.max(0,pending.indexOf(name)))%tagPalette.length];
+  }
+  function ensureTagColors(c){
+    c.customTagColors=Object.fromEntries(tagColumns(c).map(([,name])=>[name,c.customTagColors?.[name]]).filter(([,color])=>tagPalette.includes(color)));
+    let next=Number.isInteger(c.customTagColorNext)&&c.customTagColorNext>=0&&c.customTagColorNext<tagPalette.length?c.customTagColorNext:Object.keys(c.customTagColors).length%tagPalette.length;
+    for(const [,name]of tagColumns(c))if(!Object.hasOwn(c.customTagColors,name)){Object.defineProperty(c.customTagColors,name,{value:tagPalette[next],enumerable:true,writable:true,configurable:true});next=(next+1)%tagPalette.length;}
+    c.customTagColorNext=next;
+  }
+  function tagColumns(c){return (c.customTagNames??[...new Set(c.items.filter(i=>detailSlot(i.slot)).flatMap(i=>i.customTags||[]))]).map(name=>[tagKey(name),name]);}
+  function setCustomTagNames(c,names){
+    const previous=tagColumns(c).map(([key])=>key),active=new Set(names);
+    c.customTagNames=[...names];
+    for(const item of c.items)if(item.customTags)item.customTags=item.customTags.filter(name=>active.has(name));
+    syncTagSettings(c,previous);
+  }
+  function syncTagSettings(c,previous=null){
+    ensureTagColors(c);
+    const active=new Set(tagColumns(c).map(([key])=>key));
+    if(Array.isArray(c.resultColumns))c.resultColumns=[...c.resultColumns.filter(key=>!key.startsWith('tag:')||active.has(key)),...Array.from(active).filter(key=>previous&&!previous.includes(key)&&!c.resultColumns.includes(key))];
+    for(const key of Object.keys(c.filters?.counts||{}))if(key.startsWith('tag:')&&!active.has(key))delete c.filters.counts[key];
+    if(Array.isArray(c.sort?.rules))c.sort.rules=c.sort.rules.filter(r=>r.type!=='stat'||!r.stat?.startsWith('tag:')||active.has(r.stat));
   }
   function applyImport(c,result,report){
     ensurePresets(c);
@@ -178,11 +230,14 @@
     else if(changed)c.baseStats=emptyStats();
     c.importIdentity=identity;
     const fingerprint=i=>JSON.stringify([i.slot,i.itemId,i.ilevel,itemStats.map(([k])=>i.stats?.[k]||0)]);
+    const tags=new Map(c.items.filter(i=>i.origin==='import'&&i.customTags?.length).map(i=>[fingerprint(i),i.customTags]));
+    const previousTags=tagColumns(c).map(([key])=>key);
     const locks=new Map();for(const i of c.items.filter(i=>i.locked)){const key=fingerprint(i);locks.set(key,(locks.get(key)||0)+1);}
     const custom=c.items.filter(i=>i.origin==='custom');
     c.items=[...result.items.map(item=>{
-      const i={...item,stats:{...zeroStats(),...item.stats},selected:item.position>0};if(!changed&&(locks.get(fingerprint(i))||0)>0){locks.set(fingerprint(i),locks.get(fingerprint(i))-1);i.locked=true;i.selected=true;}delete i.position;return i;
+      const i={...item,stats:{...zeroStats(),...item.stats},selected:item.position>0};if(!changed&&tags.has(fingerprint(i)))i.customTags=[...tags.get(fingerprint(i))];if(!changed&&(locks.get(fingerprint(i))||0)>0){locks.set(fingerprint(i),locks.get(fingerprint(i))-1);i.locked=true;i.selected=true;}delete i.position;return i;
     }),...custom];
+    syncTagSettings(c,previousTags);
     c.report=report;c.mainType=result.mainType;
     // Import identifies candidate types, not currently worn gem quantities.
     if(Array.isArray(result.equippedGems)){
@@ -439,12 +494,12 @@
   function combinationCount(c){
     let distribution=new Map([[0,1n]]),equipmentDistribution=new Map([[0,1n]]),hasEquipment=false;
     const missing=[];
-    for(const [key,label,capacity]of getSlots(c).filter(([key])=>!usageSlot(key))){
+    for(const [key,label,capacity]of getSlots(c).filter(([key])=>detailSlot(key))){
       if(key==='off_hand'&&c.items.some(i=>i.slot==='main_hand'))continue;
       const all=c.items.filter(i=>i.slot===key);if(!all.length)continue;
-      hasEquipment=true;
+      if(!usageSlot(key))hasEquipment=true;
       const selected=all.filter(i=>i.selected),take=Math.min(capacity,all.length);
-      if(key==='off_hand'&&!selected.length)continue;
+      if((key==='off_hand'||key.startsWith('custom_'))&&!selected.length)continue;
       if(selected.length<take){missing.push(`${label}需选 ${take} 件`);continue;}
       if(key==='main_hand'){
         const off=c.items.filter(i=>i.slot==='off_hand'&&i.selected);
@@ -471,7 +526,7 @@
     if(!hasEquipment||!c.items.some(i=>!usageSlot(i.slot)&&i.selected)||missing.length)return {total:0n,equipment:0n,missing,hasEquipment};
     const equipment=[...equipmentDistribution.values()].reduce((a,b)=>a+b,0n);
     let consumables=1n;
-    for(const [key]of getSlots(c).filter(([key])=>usageSlot(key)&&!['gem','enchant'].includes(key)))consumables*=BigInt(Math.max(1,c.items.filter(i=>i.slot===key&&i.selected).length));
+    for(const [key]of getSlots(c).filter(([key])=>usageSlot(key)&&!detailSlot(key)&&!['gem','enchant'].includes(key)))consumables*=BigInt(Math.max(1,c.items.filter(i=>i.slot===key&&i.selected).length));
     const gems=c.items.filter(i=>i.slot==='gem'&&i.selected),ordinary=gems.filter(i=>!i.uniqueGroup).length;
     const uniqueGroups=new Map();for(const i of gems)if(i.uniqueGroup)uniqueGroups.set(i.uniqueGroup,(uniqueGroups.get(i.uniqueGroup)||0n)+1n);
     const diamondCount=[...uniqueGroups.values()].reduce((sum,count)=>sum+count,0n);
@@ -517,6 +572,6 @@
     validateState({version:2,activeId:c.id,characters:[c]});
     s.closedCharacters.pop();s.characters.push(c);s.activeId=c.id;return true;
   }
-  const api={tierSlots,itemStats,displayStats,toggleLock,toggleSelected,enchantSlots,enchantPool,enchantChoices,twoHanded,presets,ensurePresets,usageSlot,gemGroups,gemGroup,combinationCount,attachEquippedGems,getSlots,addSlot,renameSlot,candidates,closeCharacter,reopenCharacter,slots,stats,types,classes,races,raceGroups,classLabels,specLabels,mainTypeFor,id,emptyStats,newCharacter,newState,validateState,parseReport,baseline,upsert,removeCustomItem,applyImport,applyProfile,editDisplayedStat,selectProfile,toggleTrait,traitDescription,scaledStat,scaledStats,prepareProfileInput};
+  const api={tagPalette,presetTagColors,detailSlot,tagColor,setCustomTagNames,tagKey,tagColumns,syncTagSettings,tierSlots,itemStats,displayStats,toggleLock,toggleSelected,enchantSlots,enchantPool,enchantChoices,twoHanded,presets,ensurePresets,usageSlot,gemGroups,gemGroup,combinationCount,attachEquippedGems,getSlots,addSlot,renameSlot,removeSlot,candidates,closeCharacter,reopenCharacter,slots,stats,types,classes,races,raceGroups,classLabels,specLabels,mainTypeFor,id,emptyStats,newCharacter,newState,validateState,parseReport,baseline,upsert,removeCustomItem,applyImport,applyProfile,editDisplayedStat,selectProfile,toggleTrait,traitDescription,scaledStat,scaledStats,prepareProfileInput};
   if(typeof module !== 'undefined')module.exports=api; else root.GearModel=api;
 })(globalThis);

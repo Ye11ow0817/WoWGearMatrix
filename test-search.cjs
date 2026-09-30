@@ -3,6 +3,22 @@ const zeros=()=>Object.fromEntries(M.itemStats.map(([k])=>[k,0]));
 const item=(slot,stats={},extra={})=>({id:M.id(),slot,name:slot,origin:'custom',selected:true,ilevel:300,mainType:'strength',stats:{...zeros(),...stats},socket:false,embellishment:false,set:false,...extra});
 const character=items=>({id:M.id(),items,mainType:'strength',baseStats:{...zeros(),main:10},filters:{},sort:{},customSlots:[]});
 function run(c){const task=S.createSearch(c);let n=0;while(!task.step(1000)){assert(++n<1000);}return task.snapshot();}
+// Comparisons apply to final stats, combine with ranges, and use sheet percentages.
+{
+ const c=character([item('head',{crit:20,haste:10,mastery:5}),item('head',{crit:10,haste:10,mastery:5}),item('head',{crit:5,haste:10,mastery:5})]);
+ assert.equal(run(c).matched,3n);
+ for(const [operator,count]of [['>',1],['>=',2],['<',1],['<=',2],['=',1]]){
+  c.filters={comparisons:[{left:'crit',operator,right:'haste',unit:'value'}]};assert.equal(run(c).matched,BigInt(count));
+ }
+ c.filters={comparisons:[{left:'crit',operator:'>=',right:'haste',unit:'value'},{left:'haste',operator:'>',right:'mastery',unit:'value'}],ranges:{crit:{max:15}}};assert.equal(run(c).matched,1n);
+ c.filters={comparisons:[{left:'crit',operator:'>',right:'haste',unit:'value'}]};c.attributeFactors={haste:3};assert.equal(run(c).matched,0n);delete c.attributeFactors;
+ c.filters.comparisons[0].unit='percent';assert.throws(()=>run(c),/基础百分比/);
+ c.basePercents={crit:0,haste:50};c.ratingOverrides={crit:10,haste:10};assert.equal(run(c).matched,0n);
+ c.filters.comparisons[0].operator='<';assert.equal(run(c).matched,3n);
+ c.filters.comparisons[0].left='armor';assert.throws(()=>run(c),/支持百分比/);
+ for(const rule of [{left:'',right:'haste',operator:'>=',unit:'value'},{left:'crit',right:'haste',operator:'!=',unit:'value'},{left:'crit',right:'haste',operator:'>=',unit:'bad'}]){c.filters={comparisons:[rule]};assert.throws(()=>run(c),/属性比较/);}
+ c.filters={};assert.equal(run(c).matched,3n);
+}
 let c=character(Array.from({length:125},(_,n)=>item('head',{main:n,haste:125-n})));c.sort={rules:[{type:'stat',stat:'main',direction:'desc'}],limit:50};let r=run(c);assert.equal(r.visited,125n);assert.equal(r.matched,125n);assert.equal(r.rows.length,50);assert.equal(r.rows[0].stats.main,134);assert.equal(r.rows.at(-1).stats.main,85);
 c.sort.rules[0].direction='asc';r=run(c);assert.equal(r.rows[0].stats.main,10);assert.equal(r.rows.at(-1).stats.main,59);
 c.filters={ranges:{main:{min:20,max:30}}};r=run(c);assert.equal(r.matched,11n);assert.equal(r.rows[0].stats.main,20);assert.equal(r.rows.at(-1).stats.main,30);
@@ -48,3 +64,8 @@ const ratios=character([item('head',{crit:8,mastery:0},{id:'invalid'}),item('hea
 for(const direction of ['asc','desc']){ratios.sort={rules:[{type:'formula',left:'crit',operator:'/',right:'mastery',direction}],limit:50};const ids=run(ratios).rows.map(r=>r.gear[0]);assert.deepEqual(ids,direction==='asc'?['two','four','invalid']:['four','two','invalid']);}
 for(const rules of [null,{},[{type:'stat',stat:'unknown',direction:'desc'}],[{type:'formula',left:'crit',operator:'eval',right:'mastery',direction:'desc'}]])assert.throws(()=>S.validateRules(rules));
 console.log('PASS: multi-rule top-K, mixed directions, four formula operators, zero divisor, canonical ties across input order and invalid rules.');
+
+const unlimited=character(Array.from({length:625},(_,n)=>item('head',{main:n})));assert.equal(S.settings(unlimited).limit,100);assert.equal(run(unlimited).rows.length,100);
+for(const direction of ['asc','desc']){unlimited.sort={rules:[{type:'stat',stat:'main',direction}],limit:'all'};const result=run(unlimited);assert.equal(result.matched,625n);assert.equal(result.rows.length,625);assert.deepEqual(result.rows.map(row=>row.stats.main),Array.from({length:625},(_,n)=>10+(direction==='asc'?n:624-n)));}
+unlimited.filters={ranges:{main:{min:20,max:30}}};assert.equal(run(unlimited).rows.length,11);unlimited.sort.limit='invalid';assert.throws(()=>run(unlimited),/展示数量无效/);
+console.log('PASS: default top 100, unlimited all matching rows above 500, ascending/descending order, filters and invalid limits.');

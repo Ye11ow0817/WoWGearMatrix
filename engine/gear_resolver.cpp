@@ -1,7 +1,6 @@
 // GPL-3.0-or-later. Small CLI adapter around SimulationCraft's item engine.
 #include "simulationcraft.hpp"
 #include "dbc/client_data.hpp"
-#include "dbc/embellishment_data.hpp"
 #include "dbc/spelltext_data.hpp"
 #include "item/enchants.hpp"
 #include "class_modules/class_module.hpp"
@@ -25,6 +24,22 @@ std::string trim(std::string s) {
   return s.substr(a,s.find_last_not_of(" \t\r\n")-a+1);
 }
 struct Row {std::string source,slot,value,label; int expected_level=0;};
+bool has_embellishment_limit(const item_t& item) {
+  // 只统计“唯一装备：美化（2）”分类；美化效果表也包含幸运钥匙串等不限数量的效果。
+  constexpr unsigned limit_category_bonus_type=35;
+  constexpr int embellished_limit_category=512;
+  std::vector<unsigned> pending(item.parsed.bonus_id.begin(),item.parsed.bonus_id.end());
+  std::set<unsigned> visited;
+  while(!pending.empty()) {
+    const auto id=pending.back();pending.pop_back();
+    if(!visited.insert(id).second)continue;
+    for(const auto& bonus:item.player->dbc->item_bonus(id)) {
+      if(bonus.type==limit_category_bonus_type&&bonus.value_1==embellished_limit_category)return true;
+      if(bonus.type==ITEM_BONUS_APPLY_BONUS&&bonus.value_1>0)pending.push_back(bonus.value_1);
+    }
+  }
+  return false;
+}
 slot_e parse_slot(const std::string& s) {
   if(s=="shoulder")return SLOT_SHOULDERS;
   if(s=="wrist")return SLOT_WRISTS;
@@ -303,11 +318,7 @@ int main(int argc,char** argv) {
           base_for_spec.add_stat(player->convert_hybrid_stat(stat),item.stats.get_stat(stat));
         }
         int sockets=0;for(auto color:item.parsed.data.socket_color)if(color!=SOCKET_COLOR_NONE)++sockets;
-        bool embellished=false;
-        for(const auto& emb:embellishment_data_t::data(false)) {
-          if(std::find(item.parsed.bonus_id.begin(),item.parsed.bonus_id.end(),emb.bonus_id)!=item.parsed.bonus_id.end())embellished=true;
-          for(const auto& effect:item.parsed.data.effects)if(effect.spell_id&&effect.spell_id==emb.spell_id)embellished=true;
-        }
+        const bool embellished=has_embellishment_limit(item);
         out<<"base_for_spec: "<<stat_text(base_for_spec)<<"\n";
         out<<"gear_flags: sockets="<<sockets<<", set_id="<<item.parsed.data.id_set<<", embellishment="<<(embellished?1:0)<<"\n";
         if(item.parsed.addon_id)out<<"addon: "<<pairs_text(item.parsed.addon_stats)<<"\n";

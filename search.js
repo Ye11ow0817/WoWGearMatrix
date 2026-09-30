@@ -1,6 +1,8 @@
 (function(root){
 'use strict';
 const M=typeof module!=='undefined'?require('./model.js'):root.GearModel;
+const Rating=typeof module!=='undefined'?require('./rating.js'):root.RatingConversion;
+const comparisonOperators=['>','>=','<','<=','='];
 const keys=M.itemStats.map(([k])=>k),sortKeys=[...keys,'tier','embellishments','boe'],zero=()=>Object.fromEntries(keys.map(k=>[k,0]));
 const operators=['+','-','*','/'];
 const names=Object.fromEntries(M.itemStats.map(([key,label])=>[label,key]));
@@ -24,11 +26,11 @@ function parseFormula(source){
 }
 function formulaValue(ast,stats){if(ast.type==='number')return ast.value;if(ast.type==='stat')return stats[ast.value];if(ast.type==='unary')return (ast.op==='-'?-1:1)*formulaValue(ast.node,stats);const a=formulaValue(ast.left,stats),b=formulaValue(ast.right,stats);return ast.op==='+'?a+b:ast.op==='-'?a-b:ast.op==='*'?a*b:a/b;}
 function sortRules(c){return c.sort?.rules??[{type:'stat',stat:'main',direction:'desc'}];}
-function validateRules(rules){
+function validateRules(rules,tagKeys=[]){
  if(!Array.isArray(rules))throw Error('排序规则格式无效');
  return rules.map((r,n)=>{
   if(!r||!['asc','desc'].includes(r.direction))throw Error(`第 ${n+1} 条排序方向无效`);
-  if(r.type==='stat'&&sortKeys.includes(r.stat))return {type:r.type,stat:r.stat,direction:r.direction};
+  if(r.type==='stat'&&(sortKeys.includes(r.stat)||tagKeys.includes(r.stat)))return {type:r.type,stat:r.stat,direction:r.direction};
   if(r.type==='formula'&&typeof r.expression==='string')return {type:r.type,expression:r.expression,direction:r.direction,ast:parseFormula(r.expression)};
   if(r.type==='formula'&&keys.includes(r.left)&&keys.includes(r.right)&&operators.includes(r.operator))return {type:r.type,left:r.left,operator:r.operator,right:r.right,direction:r.direction,ast:parseFormula(`${r.left}${r.operator}${r.right}`)};
   throw Error(`第 ${n+1} 条排序属性或公式无效`);
@@ -52,24 +54,43 @@ function compareRows(rules,a,b){
  }
  return a.combinationId<b.combinationId?-1:a.combinationId>b.combinationId?1:0;
 }
+function validateComparisons(c){
+ const rules=c.filters?.comparisons??[];
+ if(!Array.isArray(rules))throw Error('属性比较规则格式无效');
+ return rules.map((r,n)=>{
+  const prefix=`第 ${n+1} 条属性比较：`;
+  if(!r||!keys.includes(r.left)||!keys.includes(r.right))throw Error(prefix+'请选择两侧属性');
+  if(!comparisonOperators.includes(r.operator))throw Error(prefix+'比较符无效');
+  if(!['value','percent'].includes(r.unit))throw Error(prefix+'比较单位无效');
+  if(r.unit==='percent'&&[r.left,r.right].some(k=>!Rating.keys.includes(k)||!Number.isFinite(Rating.toSheetPercent(c,k,c.baseStats?.[k]))))throw Error(prefix+'两侧属性须支持百分比且已填写基础百分比');
+  return {left:r.left,operator:r.operator,right:r.right,unit:r.unit};
+ });
+}
+function matchesComparison(c,rule,stats){
+ const value=k=>rule.unit==='percent'?Rating.toSheetPercent(c,k,stats[k]):stats[k];
+ const a=value(rule.left),b=value(rule.right);
+ if(!Number.isFinite(a)||!Number.isFinite(b))return false;
+ const equal=Math.abs(a-b)<=1e-9;
+ return rule.operator==='>'?a>b&&!equal:rule.operator==='>='?a>b||equal:rule.operator==='<'?a<b&&!equal:rule.operator==='<='?a<b||equal:equal;
+}
 function settings(c,defaults=defaultRanges(c)){
  const ranges={};for(const [k,label]of M.itemStats){const r=c.filters?.ranges?.[k]||{};ranges[k]={};for(const bound of ['min','max']){let v=r[bound];if(v===undefined||v===null||v==='')v=defaults[k]?.[bound];if(v===undefined)continue;const n=Number(v);if(!Number.isFinite(n)||n<0||n>1e9)throw Error(label+'范围须为 0–10亿 的数值');ranges[k][bound]=n;}if(ranges[k].min>ranges[k].max)throw Error(label+'最低值不能大于最高值');}
  const countDefaults=defaults.countRanges??defaultCountRanges(c);
- const counts={};for(const [key,label]of [['tier','套装'],['embellishment','美化'],['boe','BOE']]){
+ const counts={};for(const [key,label]of [['tier','套装'],['embellishment','美化'],['boe','BOE'],...M.tagColumns(c)]){
   const old=c.filters?.[key];const legacy=key==='tier'?(old==null||old===''||Number(old)===0?{}:{min:old}):(old==null||old===''?{}:{min:old,max:old});
   const range=c.filters?.counts?.[key]??legacy;counts[key]={...countDefaults[key]};
   for(const bound of ['min','max']){const value=range[bound];if(value===undefined||value===null||value==='')continue;const n=Number(value);if(!Number.isInteger(n)||n<0||n>16)throw Error(label+'数量须为 0–16 的整数');counts[key][bound]=n;}
   if(range.min!==undefined&&range.min!==null&&range.min!==''&&range.max!==undefined&&range.max!==null&&range.max!==''&&counts[key].min>counts[key].max)throw Error(label+'最少件数不能大于最多件数');
  }
- const rules=validateRules(sortRules(c)),limit=Number(c.sort?.limit||100);
- if(![50,100,500].includes(limit))throw Error('展示数量无效');
- return {ranges,counts,rules,limit};
+ const rules=validateRules(sortRules(c),M.tagColumns(c).map(([key])=>key)),limit=c.sort?.limit==='all'?Infinity:Number(c.sort?.limit||100);
+ if(![50,100,500,Infinity].includes(limit))throw Error('展示数量无效');
+ return {ranges,counts,rules,limit,comparisons:validateComparisons(c)};
 }
 const tierGroup=i=>i.setGroup?.trim()||(i.setId>0?String(i.setId):'');
 function defaultCountRanges(c){
- const empty={tier:{min:0,max:0},embellishment:{min:0,max:0},boe:{min:0,max:0}};
+ const empty={tier:{min:0,max:0},embellishment:{min:0,max:0},boe:{min:0,max:0},...Object.fromEntries(M.tagColumns(c).map(([key])=>[key,{min:0,max:0}]))};
  if(!M.combinationCount(c).total)return empty;
- const hasMain=c.items.some(i=>i.slot==='main_hand'),groups=M.getSlots(c).filter(([slot])=>!M.usageSlot(slot)&&!(hasMain&&slot==='off_hand'));
+ const hasMain=c.items.some(i=>i.slot==='main_hand'),groups=M.getSlots(c).filter(([slot])=>M.detailSlot(slot)&&!(hasMain&&slot==='off_hand'));
  const gems=c.items.filter(i=>i.slot==='gem'&&i.selected),ordinary=gems.some(i=>!i.uniqueGroup),unique=gems.some(i=>i.uniqueGroup),requireUnique=unique&&c.alwaysUseDiamond!==false;
  const feasible=s=>!gems.length||ordinary&&(!requireUnique||s>=1)||!ordinary&&unique&&(s===1||!requireUnique&&s===0);
  const sockets=i=>i.socketCount??(i.socket?1:0);
@@ -79,7 +100,7 @@ function defaultCountRanges(c){
   for(const [slot,,capacity]of groups){
    if(!include(slot))continue;
    const all=c.items.filter(i=>i.slot===slot);if(!all.length)continue;
-   const selected=all.filter(i=>i.selected),take=Math.min(capacity,all.length);if(slot==='off_hand'&&!selected.length)continue;
+   const selected=all.filter(i=>i.selected),take=Math.min(capacity,all.length);if((slot==='off_hand'||slot.startsWith('custom_'))&&!selected.length)continue;
    const options=new Map();
    if(slot==='main_hand'){
     const off=c.items.filter(i=>i.slot==='off_hand'&&i.selected);
@@ -98,22 +119,28 @@ function defaultCountRanges(c){
   return states;
  };
  const extremesFor=matches=>{const values=[...statesFor(matches)].filter(([s])=>feasible(s)).map(([,value])=>value);return values.length?{min:Math.min(...values.map(v=>v[0])),max:Math.max(...values.map(v=>v[1]))}:{min:0,max:0};};
- const otherSockets=[...statesFor(()=>false,slot=>!M.tierSlots.includes(slot)).keys()];
- const tierOptions=M.tierSlots.map(slot=>c.items.filter(i=>i.slot===slot));
- const activeTier=tierOptions.map((all,n)=>({slot:M.tierSlots[n],all})).filter(({all})=>all.length).map(({slot,all})=>({slot,items:all.filter(i=>i.selected)}));
- const groupSlots=new Map();for(const {slot,items}of activeTier)for(const i of items)if(i.set){const group=tierGroup(i)||'unknown:'+i.id;groupSlots.set(group,(groupSlots.get(group)||new Set()).add(slot));}
- const choices=activeTier.map(({slot,items})=>{const unique=new Map();for(const i of items){const group=i.set?(tierGroup(i)||'unknown:'+i.id):null,key=group?(groupSlots.get(group).size>1?'group:'+group:'single:'+slot):null,s=sockets(i);unique.set(JSON.stringify([key,s]),{group:key,s});}return [...unique.values()];}).sort((a,b)=>a.length-b.length);
+ const tierGroups=groups.filter(([slot])=>c.items.some(i=>i.selected&&i.set&&(i.slot===slot||slot==='main_hand'&&i.slot==='off_hand')));
+ const tierGroupSlots=new Set(tierGroups.map(([slot])=>slot));
+ const otherSockets=[...statesFor(()=>false,slot=>!tierGroupSlots.has(slot)).keys()];
+ const choices=tierGroups.map(([slot,,capacity])=>{
+  const all=c.items.filter(i=>i.slot===slot),items=all.filter(i=>i.selected),take=Math.min(capacity,all.length),unique=new Map();
+  for(const picked of physical(c,[{items,take}])){
+   const counts=new Map();for(const i of picked)if(i.set){const key=tierGroup(i)||'unknown:'+i.id;counts.set(key,(counts.get(key)||0)+1);}
+   const groups=[...counts].sort(([a],[b])=>a.localeCompare(b)),s=picked.reduce((n,i)=>n+sockets(i),0);unique.set(JSON.stringify([groups,s]),{groups,s});
+  }
+  return [...unique.values()];
+ }).sort((a,b)=>a.length-b.length);
  let tierMin=Infinity;const used=new Map();
- const visit=(index,s,currentMax)=>{if(currentMax>=tierMin)return;if(index===choices.length){if(otherSockets.some(other=>feasible(s+other)))tierMin=currentMax;return;}for(const choice of choices[index]){const previous=choice.group?used.get(choice.group)||0:0,next=previous+(choice.group?1:0);if(choice.group)used.set(choice.group,next);visit(index+1,s+choice.s,Math.max(currentMax,next));if(choice.group){if(previous)used.set(choice.group,previous);else used.delete(choice.group);}if(tierMin===0)return;}};
+ const visit=(index,s,currentMax)=>{if(currentMax>=tierMin)return;if(index===choices.length){if(otherSockets.some(other=>feasible(s+other)))tierMin=currentMax;return;}for(const choice of choices[index]){const previous=choice.groups.map(([key,count])=>[key,used.get(key)||0,count]);let nextMax=currentMax;for(const [key,old,count]of previous){used.set(key,old+count);nextMax=Math.max(nextMax,old+count);}visit(index+1,s+choice.s,nextMax);for(const [key,old]of previous){if(old)used.set(key,old);else used.delete(key);}if(tierMin===0)return;}};
  visit(0,0,0);
- const setGroups=new Set(c.items.filter(i=>i.selected&&i.set&&M.tierSlots.includes(i.slot)).map(i=>tierGroup(i)||'unknown:'+i.id));
- return {tier:{min:Number.isFinite(tierMin)?tierMin:0,max:Math.max(0,...[...setGroups].map(group=>extremesFor(i=>i.set&&M.tierSlots.includes(i.slot)&&(tierGroup(i)||'unknown:'+i.id)===group).max))},embellishment:extremesFor(i=>i.embellishment),boe:extremesFor(i=>i.boe)};
+ const setGroups=new Set(c.items.filter(i=>i.selected&&i.set&&M.detailSlot(i.slot)).map(i=>tierGroup(i)||'unknown:'+i.id));
+ return {tier:{min:Number.isFinite(tierMin)?tierMin:0,max:Math.max(0,...[...setGroups].map(group=>extremesFor(i=>i.set&&M.detailSlot(i.slot)&&(tierGroup(i)||'unknown:'+i.id)===group).max))},embellishment:extremesFor(i=>i.embellishment),boe:extremesFor(i=>i.boe),...Object.fromEntries(M.tagColumns(c).map(([key,name])=>[key,extremesFor(i=>i.customTags?.includes(name))]))};
 }
 function validate(c){
  const config=settings(c);
  const missing=M.itemStats.filter(([k])=>!Number.isFinite(c.baseStats?.[k]));if(missing.length)throw Error('请先填写基础属性：'+missing.map(([,n])=>n).join('、')+'（为零也请填 0）');
  const bad=c.items.find(i=>i.selected&&i.unresolved);if(bad)throw Error('请先补全属性：'+bad.name);
- if((config.counts.tier.min!==undefined||config.counts.tier.max!==undefined)&&c.items.some(i=>i.selected&&i.set&&M.tierSlots.includes(i.slot)&&!tierGroup(i)))throw Error('请为套装项目填写套装编号或分组，再使用套装筛选');
+ if((config.counts.tier.min!==undefined||config.counts.tier.max!==undefined)&&c.items.some(i=>i.selected&&i.set&&M.detailSlot(i.slot)&&!tierGroup(i)))throw Error('请为套装项目填写套装编号或分组，再使用套装筛选');
  return config;
 }
 function statsFor(c,i){const out={...zero(),...i.stats};if(i.supportedMainTypes?.length?!i.supportedMainTypes.includes(c.mainType):!i.adaptiveMain&&i.mainType!==c.mainType)out.main=0;return out;}
@@ -121,9 +148,9 @@ function statsFor(c,i){const out={...zero(),...i.stats};if(i.supportedMainTypes?
 function defaultRanges(c){
  const result={},rawBounds={};if(!M.combinationCount(c).total)return result;
  const hasMain=c.items.some(i=>i.slot==='main_hand');
- const groups=M.getSlots(c).filter(([k])=>!M.usageSlot(k)&&!(hasMain&&k==='off_hand')).map(([slot,,cap])=>{const all=c.items.filter(i=>i.slot===slot);return {slot,items:all.filter(i=>i.selected),take:Math.min(cap,all.length)};}).filter(g=>g.take&&!(g.slot==='off_hand'&&!g.items.length));
+ const groups=M.getSlots(c).filter(([k])=>M.detailSlot(k)&&!(hasMain&&k==='off_hand')).map(([slot,,cap])=>{const all=c.items.filter(i=>i.slot===slot);return {slot,items:all.filter(i=>i.selected),take:Math.min(cap,all.length)};}).filter(g=>g.take&&!((g.slot==='off_hand'||g.slot.startsWith('custom_'))&&!g.items.length));
  const gems=c.items.filter(i=>i.slot==='gem'&&i.selected),fixed=new Map(c.items.map(i=>[i.id,statsFor(c,i)]));
- const enchants=new Map(c.items.filter(i=>!M.usageSlot(i.slot)).map(i=>[i.id,M.enchantPool(c,i)]));
+ const enchants=new Map(c.items.filter(i=>M.detailSlot(i.slot)).map(i=>[i.id,M.enchantPool(c,i)]));
  const merge=(out,key,lo,hi)=>{const old=out.get(key);out.set(key,old?[Math.min(old[0],lo),Math.max(old[1],hi)]:[lo,hi]);};
  const combine=(a,b)=>{const out=new Map();for(const [x,[lo,hi]]of a)for(const [y,[low,high]]of b)merge(out,x+y,lo+low,hi+high);return out;};
  for(const k of keys){
@@ -146,7 +173,7 @@ function defaultRanges(c){
    for(const [used,[low,high]]of uniques){const left=s-used;if(left<0||left&&!ordinary.length)continue;min=Math.min(min,lo+low+(left?left*Math.min(...ordinary):0));max=Math.max(max,hi+high+(left?left*Math.max(...ordinary):0));}
   }
   let lower=c.baseStats[k],upper=lower;
-  for(const [slot]of M.getSlots(c).filter(([slot])=>M.usageSlot(slot)&&!['gem','enchant'].includes(slot))){const values=c.items.filter(i=>i.slot===slot&&i.selected).map(i=>fixed.get(i.id)[k]);if(values.length){lower+=Math.min(...values);upper+=Math.max(...values);}}
+  for(const [slot]of M.getSlots(c).filter(([slot])=>M.usageSlot(slot)&&!M.detailSlot(slot)&&!['gem','enchant'].includes(slot))){const values=c.items.filter(i=>i.slot===slot&&i.selected).map(i=>fixed.get(i.id)[k]);if(values.length){lower+=Math.min(...values);upper+=Math.max(...values);}}
   if(Number.isFinite(min)){
    rawBounds[k]={min:min+lower-c.baseStats[k],max:max+upper-c.baseStats[k]};
    result[k]={min:M.scaledStat(c,k,rawBounds[k].min),max:M.scaledStat(c,k,rawBounds[k].max)};
@@ -181,40 +208,42 @@ function* gemOptions(gems,left,requireDiamond,index=0,used=new Set(),chosen=[]){
 function* products(groups,index=0,chosen=[]){if(index===groups.length){yield chosen;return;}for(const value of groups[index])yield* products(groups,index+1,[...chosen,value]);}
 function* combinations(c){
  const hasMain=c.items.some(i=>i.slot==='main_hand');
- const groups=[];for(const [slot,,cap]of M.getSlots(c).filter(([k])=>!M.usageSlot(k)&&!(hasMain&&k==='off_hand'))){const all=c.items.filter(i=>i.slot===slot);if(!all.length)continue;const items=all.filter(i=>i.selected);if(slot==='off_hand'&&!items.length)continue;const take=Math.min(cap,all.length);if(items.length<take||items.filter(i=>i.locked).length>take)return;groups.push({items,take});}
+ const groups=[];for(const [slot,,cap]of M.getSlots(c).filter(([k])=>M.detailSlot(k)&&!(hasMain&&k==='off_hand'))){const all=c.items.filter(i=>i.slot===slot);if(!all.length)continue;const items=all.filter(i=>i.selected);if((slot==='off_hand'||slot.startsWith('custom_'))&&!items.length)continue;const take=Math.min(cap,all.length);if(items.length<take||items.filter(i=>i.locked).length>take)return;groups.push({items,take});}
  if(!groups.length)return;
- const gems=c.items.filter(i=>i.slot==='gem'&&i.selected),usage=M.getSlots(c).filter(([k])=>M.usageSlot(k)&&!['gem','enchant'].includes(k)).map(([k])=>c.items.filter(i=>i.slot===k&&i.selected)).filter(a=>a.length);
+ const gems=c.items.filter(i=>i.slot==='gem'&&i.selected),usage=M.getSlots(c).filter(([k])=>M.usageSlot(k)&&!M.detailSlot(k)&&!['gem','enchant'].includes(k)).map(([k])=>c.items.filter(i=>i.slot===k&&i.selected)).filter(a=>a.length);
  for(const gear of physical(c,groups)){
   yield null; // Yield work even when a gear set has no feasible gem allocation.
   const socketCount=gear.reduce((n,i)=>n+(i.socketCount??(i.socket?1:0)),0);
   const enchantGroups=gear.map(i=>{const pool=M.enchantPool(c,i);return pool.length?pool.map(e=>({id:e.id,target:i.id})):[];}).filter(a=>a.length);
-  for(const gem of gemOptions(gems,socketCount,c.alwaysUseDiamond!==false&&gems.some(i=>i.uniqueGroup)))for(const consumables of products(usage))for(const enchants of products(enchantGroups))yield {gear:gear.map(i=>i.id),gems:gem,consumables:consumables.map(i=>i.id),enchants,sockets:socketCount};
+  for(const gem of gemOptions(gems,socketCount,c.alwaysUseDiamond!==false&&gems.some(i=>i.uniqueGroup)))for(const consumables of products(usage))for(const enchants of products(enchantGroups))yield {gear:gear.filter(i=>!i.slot.startsWith('custom_')).map(i=>i.id),gems:gem,consumables:[...consumables,...gear.filter(i=>i.slot.startsWith('custom_'))].map(i=>i.id),enchants,sockets:socketCount};
  }
 }
 class TopRows{
  constructor(limit,compare){this.rows=[];this.limit=limit;this.compare=compare;}
- add(row){const a=this.rows,cmp=this.compare;if(a.length<this.limit){a.push(row);let i=a.length-1;while(i){const p=(i-1)>>1;if(cmp(a[i],a[p])<=0)break;[a[i],a[p]]=[a[p],a[i]];i=p;}return;}
+ add(row){const a=this.rows,cmp=this.compare;if(this.limit===Infinity){a.push(row);return;}if(a.length<this.limit){a.push(row);let i=a.length-1;while(i){const p=(i-1)>>1;if(cmp(a[i],a[p])<=0)break;[a[i],a[p]]=[a[p],a[i]];i=p;}return;}
  if(cmp(row,a[0])>=0)return;a[0]=row;let i=0;while(true){let j=i*2+1;if(j>=a.length)break;if(j+1<a.length&&cmp(a[j+1],a[j])>0)j++;if(cmp(a[i],a[j])>=0)break;[a[i],a[j]]=[a[j],a[i]];i=j;}}
  sorted(){return [...this.rows].sort(this.compare);}
 }
 function createSearch(c){
- const config=validate(c),count=M.combinationCount(c),byId=new Map(c.items.map(i=>[i.id,i])),fixed=new Map(c.items.map(i=>[i.id,statsFor(c,i)]));
+ const tagColumns=M.tagColumns(c),config=validate(c),count=M.combinationCount(c),byId=new Map(c.items.map(i=>[i.id,i])),fixed=new Map(c.items.map(i=>[i.id,statsFor(c,i)]));
  const compare=(a,b)=>compareRows(config.rules,a,b);
  const top=new TopRows(config.limit,compare),iterator=count.total?combinations(c):[][Symbol.iterator]();let visited=0n,matched=0n,done=false;
- function evaluate(combo){const total={...c.baseStats},sets=new Map();let embellishments=0,boe=0;
+ function evaluate(combo){const total={...c.baseStats},sets=new Map(),tagCounts=Object.fromEntries(tagColumns.map(([key])=>[key,0]));let embellishments=0,boe=0;
   const add=(id,n=1)=>{for(const k of keys)total[k]+=fixed.get(id)[k]*n;};
-  for(const id of combo.gear){const i=byId.get(id);add(id);if(i.embellishment)embellishments++;if(i.boe)boe++;if(i.set&&M.tierSlots.includes(i.slot)){const group=tierGroup(i)||'unknown:'+id;sets.set(group,(sets.get(group)||0)+1);}}
+  for(const id of [...combo.gear,...combo.consumables.filter(id=>M.detailSlot(byId.get(id).slot))]){const i=byId.get(id);if(combo.gear.includes(id))add(id);if(i.embellishment)embellishments++;if(i.boe)boe++;if(i.set&&M.detailSlot(i.slot)){const group=tierGroup(i)||'unknown:'+id;sets.set(group,(sets.get(group)||0)+1);}}
+  for(const id of [...combo.gear,...combo.consumables.filter(id=>M.detailSlot(byId.get(id).slot))])for(const name of new Set(byId.get(id).customTags||[])){const key=M.tagKey(name);if(key in tagCounts)tagCounts[key]++;}
   for(const id of combo.consumables)add(id);for(const g of combo.gems)add(g.id,g.count);for(const e of combo.enchants)add(e.id);
   const weapon=id=>{const item=byId.get(id);return item&&['main_hand','off_hand'].includes(item.slot)&&!/none|shield|2h/.test(item.weaponType||'');};
   const dualWield=combo.gear.filter(weapon).length===2;
   Object.assign(total,M.scaledStats(c,Object.fromEntries(keys.map(k=>[k,total[k]-c.baseStats[k]])),{dualWield}));
-  const tier=Math.max(0,...sets.values()),counts={tier,embellishment:embellishments,boe};
+  const tier=Math.max(0,...sets.values()),counts={tier,embellishment:embellishments,boe,...tagCounts};
   for(const [key,value]of Object.entries(counts)){const range=config.counts[key];if(range.min!==undefined&&value<range.min||range.max!==undefined&&value>range.max)return;}
   for(const k of keys){const r=config.ranges[k];if(r.min!==undefined&&total[k]<r.min||r.max!==undefined&&total[k]>r.max)return;}
-  const sortContext={...total,tier,embellishments,boe};
-  matched++;top.add({...combo,stats:total,tier,sets:[...sets],embellishments,boe,index:visited,sortValues:config.rules.map(r=>ruleValue(r,sortContext)),combinationId:combinationId(combo)});
+  if(!config.comparisons.every(rule=>matchesComparison(c,rule,total)))return;
+  const sortContext={...total,tier,embellishments,boe,...tagCounts};
+  matched++;top.add({...combo,stats:total,tier,sets:[...sets],embellishments,boe,tagCounts,index:visited,sortValues:config.rules.map(r=>ruleValue(r,sortContext)),combinationId:combinationId(combo)});
  }
  return {step(budget=1000){for(let n=0;n<budget&&!done;n++){const next=iterator.next();if(next.done){done=true;break;}if(next.value){visited++;evaluate(next.value);}}return done;},snapshot(){return {done,visited,matched,total:count.total,missing:count.missing,rows:top.sorted()};}};
 }
-const api={sortRules,validateRules,parseFormula,ruleValue,combinationId,compareRows,defaultRanges,defaultCountRanges,settings,validate,statsFor,tierGroup,combinations,createSearch};if(typeof module!=='undefined')module.exports=api;else root.GearSearch=api;
+const api={validateComparisons,sortRules,validateRules,parseFormula,ruleValue,combinationId,compareRows,defaultRanges,defaultCountRanges,settings,validate,statsFor,tierGroup,combinations,createSearch};if(typeof module!=='undefined')module.exports=api;else root.GearSearch=api;
 })(globalThis);

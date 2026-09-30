@@ -26,6 +26,29 @@ try {
   });
   const header = 'warrior="Test"\nlevel=90\nrace=night_elf\nspec=arms\n';
   const ring = sample.split(/\r?\n/).find(x => x.startsWith('finger1='));
+  test('only the Embellished equip-limit category counts as an embellishment', () => {
+    const M = require('../model.js');
+    const cases = [
+      ['ordinary', '', false],
+      ['lucky-keychain', '12715', false],
+      ['flavor-pocket', '8174', false],
+      ['arcanoweave-with-limit', '12384/8960', true],
+      ['limit-without-known-effect', '8960', true],
+      ['effect-without-limit', '12384', false],
+      ['other-unique-category', '7461', false],
+      ['keychain-on-limited-item', '12715/8960', true],
+    ];
+    const text = header + '### Gear from Bags\n' + cases.map(([name, bonus]) =>
+      `# finger1=${name},id=240949${bonus ? ',bonus_id=' + bonus : ''}`).join('\n');
+    const r = run(text); assert.equal(r.status, 0, r.stderr + r.stdout);
+    const items = M.parseReport(r.stdout).items;
+    assert.equal(items.length, cases.length);
+    cases.forEach(([name, , expected], n) => assert.equal(items[n].embellishment, expected, name));
+    assert.match(r.stdout, /effect: spell_id=1246298 /, 'Keep the Lucky Keychain effect metadata');
+    const current = M.parseReport(run(sample).stdout).items;
+    assert.equal(current.find(i => i.itemId === 237834).embellishment, true);
+    assert.equal(current.find(i => i.itemId === 237846).embellishment, true);
+  });
   test('same item ID with different bonuses remains two separate candidates', () => {
     const r = run(header + '### Gear from Bags\n# ' + ring + '\n# ' + ring.replace('12846', '12843'));
     assert.equal(r.status, 0, r.stderr + r.stdout);

@@ -512,6 +512,7 @@ body>header>div {
 }
 
 /* Character tabs share their surface with the configuration workspace. */
+:root { background:#080d13; --workspace-surface:#17222e; }
 body { gap:0; }
 body>header { height:auto; position:static; margin-bottom:14px; min-height:26px; }
 body>header>div { display:flex; align-items:center; gap:12px; }
@@ -519,17 +520,17 @@ body>header .eyebrow { display:none; }
 body>header h1 { margin:0; font-size:18px; }
 .tabbar { min-height:48px; gap:6px; border-color:#2b3949; }
 #tabs { padding:3px 0 0; margin-bottom:-1px; position:relative; z-index:1; }
-.tab-shell { width:210px; flex-basis:210px; padding:4px 6px 5px 9px; min-height:44px; background:#192430; border-radius:12px 12px 0 0; }
-.tab-shell.active { background:#17222e; border-color:#2b3949; }
+.tab-shell { width:210px; flex-basis:210px; padding:4px 6px 5px 9px; min-height:44px; background:#0d141c; border-radius:12px 12px 0 0; }
+.tab-shell.active { background:var(--workspace-surface); border-color:#2b3949; box-shadow:none; }
 .tabbar button.tab { padding:9px 5px; color:#9eafc1; }
 .tabbar .tab[aria-selected=true] { color:#e4eaf2; }
 .new-tab { width:34px; height:34px; font-size:24px; margin:0 0 5px 2px; }
 .tab-rename { flex:1; min-width:0; width:100%; padding:6px; margin:2px 3px 2px 0; font-size:12px; }
-#app { background:#17222e; border:1px solid #2b3949; border-top:0; border-bottom:0; }
+#app { background:var(--workspace-surface); border:1px solid #2b3949; border-top:0; border-bottom:0; }
 #workspace-tabs { padding:3px 18px 0; gap:22px; border-bottom:1px solid #2b3949; }
 #workspace-tabs button { padding:12px 0; border-radius:0; border-bottom:2px solid transparent; background:transparent; font-size:13px; color:#9eafc1; }
 #workspace-tabs [aria-selected=true] { background:transparent; color:#dbb779; border-bottom-color:#dbb779; box-shadow:none; }
-#combination-bar { border-color:#2b3949; border-radius:0 0 10px 10px; padding:12px 18px; box-shadow:none; }
+#combination-bar { background:var(--workspace-surface); border-color:#2b3949; border-radius:0 0 10px 10px; padding:12px 18px; box-shadow:none; }
 
 /* The category rail stays in place while its selected content scrolls. */
 #page-candidates { display:grid; grid-template-columns:132px minmax(0,1fr); gap:22px; padding:18px; }

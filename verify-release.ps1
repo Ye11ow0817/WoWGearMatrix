@@ -1,6 +1,13 @@
-﻿$ErrorActionPreference = 'Stop'
-$version = (Get-Content (Join-Path $PSScriptRoot 'package.json') -Raw | ConvertFrom-Json).version
-$exe = Join-Path $PSScriptRoot "dist/WoWGearMatrix-$version-win-x64.exe"
+﻿param([string]$ExePath)
+$ErrorActionPreference = 'Stop'
+if (!$ExePath) {
+    $latestRelease = Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'dist') -File |
+        Where-Object Name -Match '^WoWGearMatrix-\d{8}-win-x64\.exe$' |
+        Sort-Object Name -Descending | Select-Object -First 1
+    if (!$latestRelease) { throw 'No timestamped release found in dist' }
+    $ExePath = $latestRelease.FullName
+}
+$exe = $ExePath
 if (!(Test-Path -LiteralPath $exe)) { throw "Missing release: $exe" }
 $output = Join-Path ([IO.Path]::GetTempPath()) ('wowgearmatrix-release-test-' + [guid]::NewGuid())
 New-Item -ItemType Directory -Path $output | Out-Null

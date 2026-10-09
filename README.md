@@ -29,13 +29,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 输出：
 
-- `dist/WoWGearMatrix-0.3.3-win-x64.exe`：免安装启动文件，可单独复制运行，用户无需安装 Node.js。
-- `dist/WoWGearMatrix-<版本号>-source.zip`：运行 `build.ps1` 时生成的对应源码、锁文件、构建脚本及 SimC 源码和许可证，供源码交付与重建使用。
+- `dist/WoWGearMatrix-<yyyyMMdd>-win-x64.exe`：免安装启动文件，可单独复制运行，用户无需安装 Node.js。
+- `dist/WoWGearMatrix-<yyyyMMdd>-source.zip`：运行 `build.ps1` 时生成的对应源码、锁文件、构建脚本及 SimC 源码和许可证，与 EXE 使用同一构建日期，供源码交付与重建使用。
 - `dist/win-unpacked/`：构建中间产物，无需发送给用户。
 
-仅打包可运行 `npm run dist:win`；单独验证已有 EXE 可运行 `powershell -ExecutionPolicy Bypass -File .\verify-release.ps1`。
+仅打包可运行 `npm run dist:win`；单独验证已有 EXE 可运行 `powershell -ExecutionPolicy Bypass -File .\verify-release.ps1`，默认验证文件名时间最新的 EXE，也可用 `-ExePath` 指定文件。
 
-版本号在 `package.json` 修改。构建依赖固定于 `package-lock.json`；图标位于 `build/icon.ico`。
+发布文件名使用打包开始时的本地日期，格式为年月日（`yyyyMMdd`），例如 `WoWGearMatrix-20261009-win-x64.exe`。应用版本号仍在 `package.json` 修改。构建依赖固定于 `package-lock.json`；图标位于 `build/icon.ico`。
 
 代码归档到 ASAR；发布文件仅包含运行代码、WASM 与许可证，排除测试、验证记录和开发工具。仅保留 Electron 必需的默认英文语言资源；应用界面固定中文。免安装 EXE 启动时会自动解压运行文件到临时目录。
 

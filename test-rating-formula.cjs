@@ -37,7 +37,13 @@ assert.equal(R.toSheetRating(elemental,'haste',3),0);
 elemental.basePercents.leech=2;
 assert.equal(R.toSheetPercent(elemental,'leech',0),2);
 assert.equal(R.toSheetPercent(elemental,'avoidance',100),R.toPercent(elemental,'avoidance',100));
-assert(Math.abs(R.toSheetPercent(elemental,'speed',100)-R.toPercent(elemental,'speed',100)*Math.exp(-.03)*.1)<1e-10);
+// Speed uses percentage points, including the rating decay, without another /10.
+assert.equal(R.toSheetPercent(elemental,'speed',100).toFixed(2),'8.44');
+assert.equal(R.toSheetPercent(elemental,'speed',300).toFixed(2),'17.76');
+const speedBaseline={...elemental,baseStats:{...elemental.baseStats,speed:100},basePercents:{...elemental.basePercents,speed:3}};
+assert.equal(R.toSheetPercent(speedBaseline,'speed',100),3);
+assert.equal(R.toSheetPercent(speedBaseline,'speed',300).toFixed(2),'12.32');
+assert(Math.abs(R.toSheetRating(speedBaseline,'speed',R.toSheetPercent(speedBaseline,'speed',300))-300)<1e-7);
 elemental.baseStats.crit=100;
 assert.equal(R.toSheetPercent(elemental,'crit',100),5);
 assert.equal(R.toSheetPercent(elemental,'crit',938),5+R.toPercent(elemental,'crit',938)-R.toPercent(elemental,'crit',100));

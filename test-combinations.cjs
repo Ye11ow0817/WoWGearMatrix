@@ -31,3 +31,24 @@ for(let seed=0;seed<40;seed++){
  const c=character(items);assert.equal(M.combinationCount(c).total,brute(c),'fixture '+seed);
 }
 console.log('PASS: slot product, unordered pairs, empty/missing selections, variable sockets, fully filled gems, unique diamonds, food/flask factors, exact BigInt and 40 brute-force comparisons.');
+// Maximum colors: compare against unrestricted allocations independently filtered by color count.
+{
+ const S=require('./search.js');
+ const presets=M.gemGroups.slice(1).map(color=>M.presets.items.filter(p=>p.slot==='gem'&&p.name.includes(color)).slice(0,2));
+ for(const colors of [0,1,2,4])for(const sockets of [0,1,2,3,5,6])for(const diamonds of [0,1,2])for(const required of [false,true]){
+  const selected=presets.slice(0,colors).flat().map(p=>item('gem',0,true,{...p}));selected.push(item('gem'));
+  for(let d=0;d<diamonds;d++)selected.push(item('gem',0,true,{uniqueGroup:'diamond'}));
+  const c={...character([item('head',sockets),...selected]),alwaysUseDiamond:required};
+  const all=[...S.combinations(c)].filter(Boolean),byId=new Map(selected.map(g=>[g.id,g]));
+  const colorCount=row=>new Set(row.gems.map(g=>{const i=byId.get(g.id);return i.uniqueGroup?null:M.gemGroup(i);}).filter(Boolean)).size;
+  const max=Math.max(0,...all.map(colorCount));
+  const expected=all.filter(row=>!diamonds||!required||colorCount(row)===max).map(S.combinationId).sort();
+  c.onlyMaxGemColors=true;const actual=[...S.combinations(c)].filter(Boolean);
+  assert.deepEqual(actual.map(S.combinationId).sort(),expected,JSON.stringify({colors,sockets,diamonds,required}));
+  assert.equal(M.combinationCount(c).total,BigInt(expected.length));
+ }
+ const c=character([item('head',0),item('head',2)]);c.onlyMaxGemColors=true;
+ assert.equal(M.combinationCount(c).total,2n);assert.equal([...S.combinations(c)].filter(Boolean).length,2);
+ assert.equal(M.newCharacter().onlyMaxGemColors,false);
+ console.log('PASS: maximum colors, unknown colors, optional/required diamonds, varying sockets and 144 exhaustive fixtures.');
+}

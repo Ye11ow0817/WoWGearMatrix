@@ -15,7 +15,7 @@ function toPercent(c,key,rating){const per=perPercent(c,key);return per===null?n
 function toSheetPercent(c,key,rating){
  const base=c.basePercents?.[key],baseRating=c.baseStats?.[key];
  if(!Number.isFinite(base)||!Number.isFinite(baseRating))return null;
- const contribution=value=>{const percent=toPercent(c,key,value);return percent===null?null:key==='speed'?percent*Math.exp(-.0003*Math.max(0,value))*.1:percent;};
+ const contribution=value=>{const percent=toPercent(c,key,value);return percent===null?null:key==='speed'?percent*Math.exp(-.0003*Math.max(0,value)):percent;};
  const total=contribution(rating),naked=contribution(baseRating);
  if(total===null||naked===null)return null;
  return key==='haste'?100*((1+base/100)*(1+total/100)/(1+naked/100)-1):base+total-naked;

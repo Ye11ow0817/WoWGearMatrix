@@ -4,10 +4,10 @@
   "gameData": "12.1.0.69814",
   "runtime": "Node.js + WebAssembly",
   "sha256": {
-    "gear-resolver.wasm": "6253db36eb997bf731819a9a8da9528144307fa0ce1b661d7f6fe60d9a55109a",
+    "gear-resolver.wasm": "ca55ff7d48954c35c6ca7f94081c530827b841e219a247caa864c674c8faee99",
     "gear-resolver.js": "a022a39a0cd8d35ec8da8be15560ecc51bc68b483930fd7e242836bf789ab8f9",
-    "gear_resolver.cpp": "8a1e4e88ee770340abe7246964b57862788ccc11aa7893abb82d03dc354d119d",
+    "gear_resolver.cpp": "630c36d7343d2238b800e2e038b49cfd090b6df90da398cc9c6f6af0a4afe93e",
     "simc-source.zip": "4e4eb957c089ad1ba6f8b81dfca32f8af912ac126a8269898ee2b1710cbf3ef1"
   },
-  "adapterRevision": "0.3.3 - seven naked character percentages; raid buffs disabled; embellishments use equip-limit category 512"
+  "adapterRevision": "0.3.3 - personal states and percentages; fast profile initialization without repeated trait isolation; raw spell descriptions and passive flags; raid buffs and temporary triggers excluded; embellishment category 512"
 }

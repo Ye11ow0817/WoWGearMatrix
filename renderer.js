@@ -22,7 +22,7 @@ function tabs() {
 let toastTimer;
 function toast(message){clearTimeout(toastTimer);$('#toast').textContent=message;$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,6000);}
 function render() {
-  window.workspaceUI?.sync();const c=current();document.querySelectorAll('.workspace-section').forEach(section=>section.open=!(c.collapsedSections||[]).includes(section.id));tabs();$('#character-name').value=c.name;
+  window.workspaceUI?.sync();const c=current();tabs();$('#character-name').value=c.name;
   $('#input').value=c.input;
   $('#parse').disabled=!!importingId;$('#input').disabled=importingId===c.id;
   $('#parse').textContent=importingId===c.id?'导入中…':'导入';
@@ -31,12 +31,18 @@ function render() {
   $('#profile-class').innerHTML=Object.entries(M.classLabels).map(([id,label])=>`<option value="${id}">${label}</option>`).join('');
   $('#profile-spec').innerHTML=M.classes[cls].map(id=>`<option value="${id}">${M.specLabels[cls][id]}</option>`).join('');
   $('#profile-race').value=race;$('#profile-class').value=cls;$('#profile-spec').value=spec;
-  for(const el of [$('#profile-race'),$('#profile-class'),$('#profile-spec')])el.disabled=importingId===c.id;
-  const traitLabel=t=>M.traitDescription(t,c.mainType,spec);
-  $('#profile-traits').innerHTML=c.traits?.length?c.traits.map(t=>`<label><input type="checkbox" data-trait="${t.id}" ${t.enabled?'checked':''} ${importingId===c.id?'disabled':''}><span>${escape(window.TalentZh?.[t.spellId]||t.name)} <span class="effect-detail">（${escape(traitLabel(t))}）</span></span></label>`).join(''):'<p class="hint">当前职业和专精暂无可选的属性天赋。</p>';
+  for(const el of [$('#profile-race'),$('#profile-class'),$('#profile-spec')])el.disabled=!!importingId;
+  renderProfileEffects(c,cls,spec);
   $('#rating-rules').innerHTML=renderRatingRules(c,cls,spec);
   $('#base-stats').innerHTML=M.itemStats.map(([key,label])=>`<tr data-stat-row="${key}"><th scope="row"><label for="base-${key}">${key==='main'?M.types[c.mainType]:label}</label></th><td><input class="stat-input" id="base-${key}" data-stat="${key}" type="number" min="0" max="10000000" step="1" value="${c.baseStats[key]??''}" placeholder="未填写" ${importingId===c.id?'disabled':''}></td><td>${RatingConversion.keys.includes(key)?`<span class="base-percent-field"><input class="stat-input" id="base-percent-${key}" data-base-percent="${key}" type="number" min="0" max="10000" step="any" value="${c.basePercents?.[key]??''}" placeholder="未填写" aria-label="${label}基础百分比" ${importingId===c.id?'disabled':''}><span>%</span></span>`:''}</td></tr>`).join('');
   window.searchUI?.renderSettings();renderGear();window.workspaceUI?.restore();
+}
+function renderProfileEffects(c,cls,spec){
+  const states=M.characterStateNames(cls,spec),active=c.activeCharacterState||'none';
+  const stateChoices=states.length?`<section class="profile-effect-group"><h4>姿态与形态 <span class="hint">最多勾选一项</span></h4>${states.map(value=>`<label><input type="checkbox" data-profile-state="${value}" ${active===value?'checked':''} ${importingId===c.id||c.availableCharacterStates&&!c.availableCharacterStates.includes(value)?'disabled':''}><span>${escape(M.characterStateLabels[value])}${c.availableCharacterStates&&!c.availableCharacterStates.includes(value)?'<span class="hint">（未学习）</span>':''}</span></label>`).join('')}</section>`:'';
+  const traits=(c.traits||[]).filter(t=>![386164,386196,386208,24858,197625,232698].includes(t.spellId)),groups=[[true,'被动天赋'],[false,'主动天赋']];
+  const talentChoices=groups.map(([passive,title])=>{const entries=traits.filter(t=>(t.passive!==false)===passive);return entries.length?`<section class="profile-effect-group"><h4>${title}</h4>${entries.map(t=>`<label><input type="checkbox" data-trait="${t.id}" ${t.enabled?'checked':''} ${importingId===c.id?'disabled':''}><span>${escape(window.TalentZh?.[t.spellId]||'属性天赋')} <span class="effect-detail">（${escape(M.traitDescription(t,c.mainType,spec))}）</span></span></label>`).join('')}</section>`:'';}).join('');
+  $('#profile-traits').innerHTML=stateChoices+talentChoices||'<p class="hint">当前职业和专精暂无可选的属性天赋或被动。</p>';
 }
 function renderRatingRules(c,cls,spec){
   const R=RatingConversion,name=k=>M.itemStats.find(([key])=>key===k)?.[1]||k;
@@ -98,7 +104,8 @@ function renderGear(){
   };
   const gems=c.items.filter(i=>i.slot==='gem'),customGems=gems.filter(i=>!M.gemGroup(i));
   const diamondOrder=['240983','240967','240969','240971'];
-  const gemPanel=`<section class="slot-panel gem-panel" data-slot="gem"><p class="hint gem-help">选择宝石后填满所有孔位；普通宝石可重复；同一组合最多使用一颗钻石。“始终使用”勾选后，若已选钻石，每套组合必带一颗。不选宝石时暂不计算镶嵌。</p><div class="gem-groups">${M.gemGroups.map(group=>`<section class="gem-group" data-gem-group="${group}"><h4>${group}${group==='钻石'?`<label class="diamond-option"><input type="checkbox" id="always-use-diamond" ${c.alwaysUseDiamond!==false?'checked':''} ${disabled?'disabled':''}>始终使用</label>`:''}</h4><div class="gem-group-list">${gems.filter(i=>M.gemGroup(i)===group).sort((a,b)=>group==='钻石'?diamondOrder.indexOf(a.presetId)-diamondOrder.indexOf(b.presetId):0).map(card).join('')}</div></section>`).join('')}</div>${customGems.length?`<div class="custom-gems"><h4>自定义 / 待补全宝石</h4><div class="custom-gem-list">${customGems.map(card).join('')}</div></div>`:''}${addButton('gem','宝石')}</section>`;
+  const diamondRank=i=>{const rank=diamondOrder.indexOf(i.presetId);return rank<0?diamondOrder.length:rank;};
+  const gemPanel=`<section class="slot-panel gem-panel" data-slot="gem"><div class="gem-groups">${M.gemGroups.map(group=>`<section class="gem-group" data-gem-group="${group}"><h4>${group}</h4><div class="gem-group-list">${gems.filter(i=>M.gemGroup(i)===group).sort((a,b)=>group==='钻石'?diamondRank(a)-diamondRank(b):0).map(card).join('')}<button class="add-item-row" data-add="gem" data-gem-target="${group}" ${disabled?'disabled':''}>＋ 新增自定义${group}</button></div>${group==='钻石'?`<div class="diamond-options"><label class="diamond-option"><input type="checkbox" id="always-use-diamond" ${c.alwaysUseDiamond!==false?'checked':''} ${disabled||!gems.some(i=>i.selected&&i.uniqueGroup)?'disabled':''}>始终使用</label><div class="diamond-suboption"><label class="diamond-option"><input type="checkbox" id="only-max-gem-colors" ${c.onlyMaxGemColors?'checked':''} ${disabled||!M.maxGemColorsAvailable(c)?'disabled':''}>尽量凑齐宝石颜色</label><span class="gem-color-help" tabindex="0" aria-label="宝石颜色说明" aria-describedby="gem-color-tooltip">?<span id="gem-color-tooltip" class="gem-color-tooltip" role="tooltip">尽量搭配不同颜色的宝石，让钻石获得更多颜色加成。孔位不够时，能凑几种颜色就凑几种；只计算颜色种类最多的搭配。</span></span></div></div>`:''}</section>`).join('')}</div>${customGems.length?`<div class="custom-gems"><h4>自定义 / 待补全宝石</h4><div class="custom-gem-list">${customGems.map(card).join('')}</div></div>`:''}</section>`;
   const enchantOrder=['avoidance','leech','speed'];
   const enchantRank=i=>{const rank=enchantOrder.findIndex(stat=>i.stats?.[stat]>0);return rank<0?enchantOrder.length:rank;};
   const enchantPanel=`<section class="slot-panel enchant-panel" data-slot="enchant"><p class="hint">按部位选择候选，每件适用装备使用一种。同一种附魔可用于两枚戒指或双持武器；触发效果单独显示。</p><div class="enchant-groups">${M.enchantSlots.map(([key,label])=>`<section class="enchant-group" data-enchant-group="${key}"><h4>${label}</h4><div class="gear-list">${c.items.filter(i=>i.slot==='enchant'&&i.enchantSlot===key).sort((a,b)=>['head','shoulders','feet'].includes(key)?enchantRank(a)-enchantRank(b):0).map(card).join('')}<button class="add-item-row" data-add="enchant" data-enchant-target="${key}" ${disabled?'disabled':''}>＋ 新增自定义附魔</button></div></section>`).join('')}</div></section>`;
@@ -126,9 +133,13 @@ function openEditor(slot,item,target) {
   const c=current();if(c.id===importingId)return;
   const spec=M.getSlots(c).find(([key])=>key===slot);
   editing={characterId:c.id,item:item?structuredClone(item):{id:M.id(),slot,origin:'custom',source:'custom',selected:true,name:'',ilevel:0,mainType:c.mainType,adaptiveMain:!M.detailSlot(slot),socketCount:0,enchantSlot:target||'head',stats:Object.fromEntries(M.itemStats.map(([k])=>[k,0])),socket:false,embellishment:false,set:false}};
+  if(!item&&slot==='gem'&&M.gemGroups.includes(target)){
+    editing.item.gemGroup=target;
+    if(target==='钻石')editing.item.uniqueGroup=M.presets.items.find(i=>i.slot==='gem'&&i.uniqueGroup).uniqueGroup;
+  }
   editing.tagNames=M.tagColumns(c).map(([,name])=>name);
   const i=editing.item;
-  $('#editor-title').textContent=`${item?'编辑项目':'新增项目'} · ${spec[1]}`;
+  $('#editor-title').textContent=`${item?'编辑项目':'新增项目'} · ${slot==='gem'?(M.gemGroup(i)||spec[1]):spec[1]}`;
   $('#editor-source').textContent=(i.presetId?'':i.origin==='custom'?'自定义':'导入项目')+(i.itemId?` · 物品 ID ${i.itemId}`:'')+(i.unresolved?' · 请填写属性，保存后用于计算':'');
   $('#delete-item').hidden=!(item&&i.origin==='custom'&&i.source==='custom');
   const usage=!M.detailSlot(slot);
@@ -160,12 +171,13 @@ $('#app').addEventListener('click',e=>{
   else if(e.target.closest('#new-slot'))openSlotDialog();
   else if(renameSlot)openSlotDialog(renameSlot.dataset.renameSlot);
   else if(deleteSlot){const c=current(),key=deleteSlot.dataset.deleteSlot,slot=c.customSlots.find(s=>s.id===key);if(!slot||!confirm(`确定删除栏位“${slot.name}”及其中的所有项目吗？`))return;try{M.removeSlot(c,key);renderGear();save();}catch(err){toast(err.message);}}
-  else if(add)openEditor(add.dataset.add,null,add.dataset.enchantTarget);
+  else if(add)openEditor(add.dataset.add,null,add.dataset.enchantTarget||add.dataset.gemTarget);
   else if(button){const i=current().items.find(i=>i.id===button.dataset.item);if(i){try{M.toggleSelected(current(),i);renderGear();save();}catch(err){toast(err.message);}}}
 });
 $('#gem-slots').addEventListener('change',e=>{
-  if(e.target.id!=='always-use-diamond'||current().id===importingId)return;
-  current().alwaysUseDiamond=e.target.checked;renderCombinations();window.searchUI?.invalidate();save();
+  const field={'always-use-diamond':'alwaysUseDiamond','only-max-gem-colors':'onlyMaxGemColors'}[e.target.id];
+  if(!field||current().id===importingId)return;
+  current()[field]=e.target.checked;renderGear();save();
 });
 $('#app').addEventListener('contextmenu',e=>{
   if(!e.target.closest('[data-item-region]'))return;
@@ -217,6 +229,7 @@ $('#delete-item').addEventListener('click',()=>{
   try{M.removeCustomItem(c,item.id);$('#editor').close();renderGear();save();}
   catch(err){$('#edit-error').textContent=err.message;}
 });
+$('#usage-open').addEventListener('click',()=>$('#usage-dialog').showModal());
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>document.getElementById(b.dataset.close).close()));
 function renameCharacter(id,value){
   const c=state.characters.find(c=>c.id===id),name=value.trim();
@@ -252,21 +265,38 @@ $('#base-stats').addEventListener('input',e=>{
   M.editDisplayedStat(current(),e.target.dataset.stat,value!==''&&e.target.validity.valid?Number(value):null);
   save();
 });
-$('#profile-class').addEventListener('change',()=>{
-  const cls=$('#profile-class').value;if(!M.classes[cls])return;
-  M.selectProfile(current(),{class:cls,spec:M.classes[cls][0],race:$('#profile-race').value});render();save();
-});
-$('#profile-race').addEventListener('change',()=>{M.selectProfile(current(),{race:$('#profile-race').value});render();save();});
-$('#profile-spec').addEventListener('change',()=>{M.selectProfile(current(),{spec:$('#profile-spec').value});render();save();});
-$('#profile-traits').addEventListener('change',e=>{
-  const id=Number(e.target.dataset.trait),c=current(),trait=c.traits?.find(t=>t.id===id);if(!trait)return;
-  M.toggleTrait(c,id,e.target.checked);render();save();
-});
+async function updateCharacterProfile(choice={},traitChange=null){
+  if(importingId)return;
+  const c=current(),draft=structuredClone(c),old=c.attributeContext||{};
+  const cls=choice.class||old.class||'warrior',spec=choice.spec||old.spec||M.classes[cls][0],race=choice.race||old.race||'human';
+  const changed=cls!==old.class||spec!==old.spec;
+  if(traitChange)M.toggleTrait(draft,traitChange.id,traitChange.enabled);
+  const profile={class:cls,spec,race,level:old.level||90,disabledTraits:changed?[]:draft.disabledTraits||[],enabledTraits:changed?[]:draft.enabledTraits||[],fast:true,characterState:choice.characterState??(changed?'auto':c.characterState??'auto')};
+  const input=`${cls}="Profile"\nlevel=${profile.level}\nrace=${race}\nspec=${spec}\ntalents=${changed?'':old.talents||''}\n`;
+  importingId=c.id;render();
+  try{
+    const result=await window.simc.parse(input,profile);
+    if(result.code===1||!result.gear?.baseStats)throw Error(result.report||'状态计算失败');
+    const target=state.characters.find(t=>t.id===c.id)||state.closedCharacters?.find(t=>t.id===c.id);if(!target)return;
+    if(!changed)for(const t of result.gear.traits){const previous=c.traits?.find(old=>old.id===t.id);if(previous&&!t.enabled&&previous.rank===t.rank)t.spellEffects=previous.spellEffects;}
+    M.applyCharacterState(target,result.gear);
+    target.disabledTraits=profile.disabledTraits;target.enabledTraits=profile.enabledTraits;
+
+  }catch(e){toast('计算失败，已保留原有属性：'+e.message);}
+  finally{importingId=null;render();save();}
+}
+$('#profile-class').addEventListener('change',()=>{const cls=$('#profile-class').value;if(M.classes[cls])updateCharacterProfile({class:cls,spec:M.classes[cls][0]});});
+$('#profile-race').addEventListener('change',()=>updateCharacterProfile({race:$('#profile-race').value}));
+$('#profile-spec').addEventListener('change',()=>updateCharacterProfile({spec:$('#profile-spec').value}));
+$('#profile-traits').addEventListener('change',e=>{if(e.target.dataset.profileState){updateCharacterProfile({characterState:e.target.checked?e.target.dataset.profileState:'none'});return;}const id=Number(e.target.dataset.trait);if(current().traits?.some(t=>t.id===id))updateCharacterProfile({}, {id,enabled:e.target.checked});});
 $('#input').addEventListener('input',()=>{current().input=$('#input').value;save();});
 $('#parse').addEventListener('click',async()=>{
   const c=current();c.input=$('#input').value;importingId=c.id;render();save();
   try {
-    const result=await window.simc.parse(c.input),target=state.characters.find(t=>t.id===c.id)||state.closedCharacters?.find(t=>t.id===c.id);
+    const inputClass=c.input.match(/^(warrior|paladin|hunter|rogue|priest|death_knight|deathknight|shaman|mage|warlock|monk|druid|demon_hunter|demonhunter|evoker)\s*=/m)?.[1],inputSpec=c.input.match(/^spec\s*=\s*(\w+)/m)?.[1];
+    const sameProfile=inputClass===c.attributeContext?.class&&inputSpec===c.attributeContext?.spec;
+    const importText=c.input.replace(/^# wgm_state=.*$/gm,'')+'\n# wgm_state='+(sameProfile?c.characterState??'auto':'auto')+'\n';
+    const result=await window.simc.parse(importText),target=state.characters.find(t=>t.id===c.id)||state.closedCharacters?.find(t=>t.id===c.id);
     if(!target)return;
     if(result.code===1 || !result.gear?.baseStats) {target.report=result.report;target.importInfo='导入失败，原有装备和基础属性已保留。';target.importWarning=true;}
     else {M.applyImport(target,result.gear,result.report);target.importWarning=result.code!==0||result.gear.warnings.length>0;if(target.importWarning)target.importInfo+=' 部分装备或版本信息需核对。';}
@@ -274,12 +304,6 @@ $('#parse').addEventListener('click',async()=>{
   }catch(e){const target=state.characters.find(t=>t.id===c.id)||state.closedCharacters?.find(t=>t.id===c.id);if(target){target.report=e.message;target.importInfo='导入失败，原有装备和基础属性已保留。';target.importWarning=true;toast(target.importInfo);}}
   finally{importingId=null;render();save();}
 });
-document.querySelectorAll('.workspace-section').forEach(section=>section.addEventListener('toggle',()=>{
-  if(!state)return;const c=current(),closed=new Set(c.collapsedSections||[]);
-  if(closed.has(section.id)===!section.open)return;
-  if(section.open)closed.delete(section.id);else closed.add(section.id);c.collapsedSections=[...closed];save();
-}));
-$('#count-rules').addEventListener('click',()=>$('#count-dialog').showModal());
 $('#rating-rules-open').addEventListener('click',()=>$('#rating-rules-dialog').showModal());
 $('#rating-rules').addEventListener('change',e=>{
   const key=e.target.dataset.ratingRatio;if(!key)return;

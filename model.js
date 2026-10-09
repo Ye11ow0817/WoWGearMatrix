@@ -29,7 +29,7 @@
   const mainTypeFor=(cls,spec)=>({warrior:'strength',death_knight:'strength',hunter:'agility',rogue:'agility',mage:'intellect',priest:'intellect',warlock:'intellect',evoker:'intellect'})[cls] || (cls==='demon_hunter' ? (spec==='devourer'?'intellect':'agility') : cls==='paladin' ? (spec==='holy'?'intellect':'strength') : cls==='shaman' ? (spec==='enhancement'?'agility':'intellect') : cls==='druid' ? (['feral','guardian'].includes(spec)?'agility':'intellect') : cls==='monk' ? (spec==='mistweaver'?'intellect':'agility') : 'strength');
   const id = () => globalThis.crypto.randomUUID();
   const emptyStats = () => Object.fromEntries(stats.map(([k]) => [k, null]));
-  const newCharacter = (name = '新角色') => {const c=ensurePresets({id:id(),name,renamed:false,input:'',report:'',items:[],customSlots:[],baseStats:emptyStats(),mainType:'strength',filters:{},sort:{},importInfo:'',alwaysUseDiamond:true});selectProfile(c,{class:'warrior',spec:'arms',race:'human'});return c;};
+  const newCharacter = (name = '新角色') => {const c=ensurePresets({id:id(),name,renamed:false,input:'',report:'',items:[],customSlots:[],baseStats:emptyStats(),mainType:'strength',filters:{},sort:{},importInfo:'',alwaysUseDiamond:true,onlyMaxGemColors:false});selectProfile(c,{class:'warrior',spec:'arms',race:'human'});return c;};
   const newState = () => { const c = newCharacter('角色 1'); return {version:2,activeId:c.id,characters:[c]}; };
   const getSlots=c=>[...slots,...(c.customSlots||[]).map(s=>[s.id,s.name,1])];
   function checkSlotName(c,name,exceptId){
@@ -58,6 +58,10 @@
     for (const c of s.characters) {
       if (!c || typeof c.id !== 'string' || ids.has(c.id) || typeof c.name !== 'string' || !c.name.trim() || c.name.length > 80 || !Array.isArray(c.items) || c.items.length > 3000 || typeof c.input !== 'string' || typeof c.report !== 'string' || !types[c.mainType]) throw Error('角色数据损坏');
       ids.add(c.id);
+      if(c.characterState!==undefined&&!validCharacterState(c.characterState,c.attributeContext?.class,c.attributeContext?.spec))throw Error('角色状态无效');
+      if(c.activeCharacterState!==undefined&&!validCharacterState(c.activeCharacterState,c.attributeContext?.class,c.attributeContext?.spec))throw Error('角色状态无效');
+      if(c.availableCharacterStates!==undefined&&(!Array.isArray(c.availableCharacterStates)||c.availableCharacterStates.length>5||c.availableCharacterStates.some(v=>!validCharacterState(v,c.attributeContext?.class,c.attributeContext?.spec))))throw Error('角色状态选项无效');
+      if(c.onlyMaxGemColors!==undefined&&typeof c.onlyMaxGemColors!=='boolean')throw Error('宝石最大颜色数选项无效');
       if(c.alwaysUseDiamond!==undefined&&typeof c.alwaysUseDiamond!=='boolean')throw Error('钻石始终使用选项无效');
       if(c.resultPercent!==undefined&&typeof c.resultPercent!=='boolean')throw Error('结果百分比选项无效');
       if(c.customTagNames!==undefined&&(!Array.isArray(c.customTagNames)||c.customTagNames.length>200||c.customTagNames.some(name=>typeof name!=='string'||!name.trim()||name!==name.trim()||name.length>40)||new Set(c.customTagNames).size!==c.customTagNames.length))throw Error('自定义标签列表格式无效');
@@ -114,8 +118,24 @@
     return s;
   }
   const slotKey = s => ({shoulder:'shoulders',wrist:'wrists',finger1:'finger',finger2:'finger',trinket1:'trinket',trinket2:'trinket'})[s] || s;
+  const characterStateLabels={auto:'按专精默认',none:'无姿态 / 人形',battle_stance:'战斗姿态',defensive_stance:'防御姿态',berserker_stance:'狂暴姿态',bear_form:'熊形态',cat_form:'猎豹形态',moonkin_form:'枭兽形态',shadowform:'暗影形态'};
+  function characterStateNames(cls,spec){return cls==='warrior'?['battle_stance','defensive_stance','berserker_stance']:cls==='druid'?['bear_form','cat_form','moonkin_form']:cls==='priest'&&spec==='shadow'?['shadowform']:[];}
+  function validCharacterState(value,cls,spec){return value==='auto'||value==='none'||characterStateNames(cls,spec).includes(value);}
+  function applyCharacterState(c,result){
+    if(!result.baseStats||!result.basePercents)throw Error('SimC 未返回状态属性');
+    const adjustment={...c.manualRawAdjustment};
+    c.attributeContext=result.attributeContext;c.mainType=result.mainType;
+    c.characterState=result.characterState;c.activeCharacterState=result.activeCharacterState;c.availableCharacterStates=result.availableCharacterStates;
+    c.naturalRawStats={...result.rawStats};c.rawBaseStats={...result.rawStats};c.manualRawAdjustment=adjustment;
+    c.attributeFactors={...result.attributeFactors};c.attributeResponse=result.attributeResponse;
+    c.responseBaseStats={main:result.rawStats.main,mastery:result.rawStats.mastery};c.responseBaseFactors={main:result.attributeFactors.main,mastery:result.attributeFactors.mastery};
+    c.baseStats={...result.baseStats};c.basePercents={...result.basePercents};c.traits=result.traits;
+    c.attributeOffset=Object.fromEntries(itemStats.map(([k])=>[k,result.baseStats[k]-statRound(k,result.rawStats[k]*(result.attributeFactors[k]||1))]));
+    for(const [k] of itemStats){c.rawBaseStats[k]=Math.max(0,result.rawStats[k]+(adjustment[k]||0));c.baseStats[k]+=statRound(k,c.rawBaseStats[k]*(result.attributeFactors[k]||1))-statRound(k,result.rawStats[k]*(result.attributeFactors[k]||1));}
+  }
   function prepareProfileInput(input,profile){
     if(!profile)return input;
+    if(!validCharacterState(profile.characterState??'none',profile.class,profile.spec))throw Error('角色状态无效');
     if(!classes[profile.class]?.includes(profile.spec)||!races.includes(profile.race)||!Array.isArray(profile.disabledTraits)||profile.disabledTraits.length>100||profile.disabledTraits.some(n=>!Number.isInteger(n)||n<1||n>10000000)||!Array.isArray(profile.enabledTraits||[])||(profile.enabledTraits||[]).length>100||(profile.enabledTraits||[]).some(n=>!Number.isInteger(n)||n<1||n>10000000))throw Error('角色选项无效');
     const actor=input.match(/^(warrior|paladin|hunter|rogue|priest|death_knight|deathknight|shaman|mage|warlock|monk|druid|demon_hunter|demonhunter|evoker)\s*=/m)?.[1];
     const originalSpec=input.match(/^spec\s*=\s*(\w+)/m)?.[1];
@@ -126,9 +146,10 @@
     text=/^spec\s*=/m.test(text)?text.replace(/^spec\s*=.*$/m,'spec='+profile.spec):text+'\nspec='+profile.spec;
     if(profile.level!==undefined)text=/^level\s*=/m.test(text)?text.replace(/^level\s*=.*$/m,'level='+level):text+'\nlevel='+level;
     if((({deathknight:'death_knight',demonhunter:'demon_hunter'})[actor]||actor)!==profile.class||originalSpec!==profile.spec)text=text.replace(/^talents\s*=.*$/m,'talents=');
-    return text+'\n# wgm_disable_traits='+profile.disabledTraits.join('/')+'\n# wgm_enable_traits='+(profile.enabledTraits||[]).join('/')+'\n# wgm_discover_traits=1\n';
+    text=text.replace(/^# wgm_(?:state|disable_traits|enable_traits|discover_traits|fast_profile)=.*$/gm,'');
+    return text+'\n# wgm_state='+(profile.characterState??'none')+'\n# wgm_disable_traits='+profile.disabledTraits.join('/')+'\n# wgm_enable_traits='+(profile.enabledTraits||[]).join('/')+(profile.fast?'\n# wgm_fast_profile=1\n':'\n# wgm_discover_traits=1\n');
   }
-  function parseReport(report) {
+  function parseReport(report,fastProfile=false) {
     const character = report.match(/^Character: (.*?) \| (.*?)\/(.*?) \| level=(\d+)/m);
     const cls=({deathknight:'death_knight',demonhunter:'demon_hunter'})[character?.[2]]||character?.[2], spec=character?.[3];
     const mainType = mainTypeFor(cls,spec);
@@ -141,13 +162,21 @@
     const percents=parseValues(report.match(/^character_percent: (.*)$/m)?.[1]);
     const response=parseValues(report.match(/^character_response: (.*)$/m)?.[1]);
     const toStats=v=>({armor:v.armor||0,stamina:v.stamina||0,main:v[mainType]||0,crit:v.crit_rating||0,haste:v.haste_rating||0,mastery:v.mastery_rating||0,versatility:v.versatility_rating||0,avoidance:v.avoidance_rating||0,leech:v.leech_rating||0,speed:v.speed_rating||0});
+    const percentEffects=new Map([...report.matchAll(/^trait_percent: id=(\d+) \| stats: (.*)$/gm)].map(m=>[Number(m[1]),parseValues(m[2])]));
     const effects=new Map([...report.matchAll(/^trait_effect: id=(\d+) \| stats: (.*)$/gm)].map(m=>[Number(m[1]),toStats(parseValues(m[2]))]));
     const multipliers=new Map([...report.matchAll(/^trait_multiplier: id=(\d+) \| stats: (.*)$/gm)].map(m=>[Number(m[1]),toStats(parseValues(m[2]))]));
     const probes=new Map([...report.matchAll(/^trait_probe: id=(\d+) \| stats: (.*)$/gm)].map(m=>[Number(m[1]),toStats(parseValues(m[2]))]));
     const spellEffects=new Map([...report.matchAll(/^trait_spell: id=(\d+) \| rank=(\d+)(.*)$/gm)].map(m=>[Number(m[1]),parseValues(m[3])]));
     const traitResponses=new Map([...report.matchAll(/^trait_response: id=(\d+) \| (.*)$/gm)].map(m=>[Number(m[1]),parseValues(m[2])]));
-    const traits=[...report.matchAll(/^trait: id=(\d+) \| (?:spell=(\d+) \| )?name=(.*?) \| rank=(\d+) \| enabled=([01])(?: \| origin=(import|manual|available))?$/gm)].map(m=>({id:Number(m[1]),spellId:Number(m[2]||0),name:m[3],rank:Number(m[4]),enabled:m[5]==='1',origin:m[6]||'import',effect:effects.get(Number(m[1]))||zeroStats(),multiplier:multipliers.get(Number(m[1]))||{},probe:probes.get(Number(m[1]))||zeroStats(),spellEffects:spellEffects.get(Number(m[1]))||{},response:traitResponses.get(Number(m[1]))||{}})).filter(t=>itemStats.some(([k])=>t.effect[k]||t.probe[k]||t.multiplier[k]&&Math.abs(t.multiplier[k]-1)>0.00001));
-    const result = {name:character?.[1] || '',attributeContext:{class:cls||'',spec:spec||'',level:Number(character?.[4]||0),race:context?.[1]||'',talents:context?.[2]||'',dataVersion},baseStats:Object.keys(values).length?toStats(values):null,basePercents:Object.keys(percents).length?Object.fromEntries(percentStats.map(key=>[key,percents[key]??null])):null,rawStats:Object.keys(raw).length?toStats(raw):null,attributeFactors:Object.keys(factors).length?toStats(factors):null,attributeResponse:Object.keys(response).length?response:null,traits,items:[],skipped:0,failed:0,warnings:[]};
+    const kinds=new Map([...report.matchAll(/^trait_kind: id=(\d+) \| passive=([01])$/gm)].map(m=>[Number(m[1]),m[2]==='1']));
+    const selectedTraits=[...report.matchAll(/^trait: id=(\d+) \| (?:spell=(\d+) \| )?name=(.*?) \| rank=(\d+) \| enabled=([01])(?: \| origin=(import|manual|available))?$/gm)].map(m=>({id:Number(m[1]),spellId:Number(m[2]||0),name:m[3],rank:Number(m[4]),enabled:m[5]==='1',origin:m[6]||'import',passive:kinds.get(Number(m[1]))??true,percentEffect:percentEffects.get(Number(m[1]))||{},effect:effects.get(Number(m[1]))||zeroStats(),multiplier:multipliers.get(Number(m[1]))||{},probe:probes.get(Number(m[1]))||zeroStats(),spellEffects:spellEffects.get(Number(m[1]))||{},response:traitResponses.get(Number(m[1]))||{}}));
+    const hasEffect=t=>Object.keys(t.percentEffect).length||itemStats.some(([k])=>t.effect[k]||t.probe[k]||t.multiplier[k]&&Math.abs(t.multiplier[k]-1)>0.00001);
+    const traits=fastProfile?(profileCatalog.profiles[`${cls}/${spec}`]?.traits||[]).map(fresh=>{
+      const selected=selectedTraits.find(t=>t.id===fresh.id);
+      return {...structuredClone(fresh),...(selected?{enabled:selected.enabled,origin:selected.origin,rank:selected.rank,spellEffects:Object.keys(selected.spellEffects).length?selected.spellEffects:fresh.spellEffects}:{} )};
+    }):selectedTraits.filter(hasEffect);
+    const stateLine=report.match(/^State: requested=(\w+) \| active=(\w+) \| available=([\w/]+)$/m);
+    const result = {characterState:stateLine?.[1]||'none',activeCharacterState:stateLine?.[2]||'none',availableCharacterStates:stateLine?.[3]?.split('/')||['none'],name:character?.[1] || '',attributeContext:{class:cls||'',spec:spec||'',level:Number(character?.[4]||0),race:context?.[1]||'',talents:context?.[2]||'',dataVersion},baseStats:Object.keys(values).length?toStats(values):null,basePercents:Object.keys(percents).length?Object.fromEntries(percentStats.map(key=>[key,percents[key]??null])):null,rawStats:Object.keys(raw).length?toStats(raw):null,attributeFactors:Object.keys(factors).length?toStats(factors):null,attributeResponse:Object.keys(response).length?response:null,traits,items:[],skipped:0,failed:0,warnings:[]};
     const blocks = report.split(/\n(?=\[\d+\] )/).slice(1);
     for (const block of blocks) {
       const header = block.match(/^\[\d+\] (.*?) \/ (\w+) \/ (.*)/);
@@ -224,6 +253,7 @@
   }
   function applyImport(c,result,report){
     ensurePresets(c);
+    c.characterState=result.characterState??'none';c.activeCharacterState=result.activeCharacterState??'none';c.availableCharacterStates=result.availableCharacterStates||['none'];
     const identity=JSON.stringify({name:result.name||'',...result.attributeContext});
     const changed=c.mainType!==result.mainType || (c.importIdentity&&c.importIdentity!==identity);
     if(result.baseStats){c.rawBaseStats=result.rawStats;c.naturalRawStats={...result.rawStats};c.manualRawAdjustment=zeroStats();c.attributeFactors=result.attributeFactors;c.attributeResponse=result.attributeResponse;c.responseBaseStats={main:result.rawStats.main,mastery:result.rawStats.mastery};c.responseBaseFactors={main:result.attributeFactors.main,mastery:result.attributeFactors.mastery};c.baseStats=result.baseStats;c.basePercents=result.basePercents||(!changed?c.basePercents:null)||Object.fromEntries(percentStats.map(key=>[key,null]));c.attributeContext=result.attributeContext;c.traits=result.traits;c.disabledTraits=[];c.enabledTraits=[];c.attributeOffset=Object.fromEntries(itemStats.map(([k])=>[k,(result.baseStats[k]||0)-statRound(k,(result.rawStats[k]||0)*(result.attributeFactors[k]||1))]));}
@@ -257,6 +287,7 @@
     c.importInfo=`已导入 ${result.items.length} 件装备；忽略 ${result.skipped} 件；失败 ${result.failed} 件。`+(result.baseStats?'基础属性已按 SimC 计算。':changed?'角色信息变化，请重新填写基础属性。':'已保留填写的基础属性。')+(result.baseStats&&!result.basePercents?'导入数据未提供基础百分比，请手动填写。':'');
   }
   function applyProfile(c,result){
+    c.characterState=result.characterState??'none';c.activeCharacterState=result.activeCharacterState??'none';c.availableCharacterStates=result.availableCharacterStates||['none'];
     if(!result.baseStats||!result.rawStats)throw Error('SimC 未返回角色基础属性');
     const oldContext=c.attributeContext||{},sameTalents=oldContext.class===result.attributeContext.class&&oldContext.spec===result.attributeContext.spec&&oldContext.talents===result.attributeContext.talents;
     const oldTraits=new Map((sameTalents?c.traits||[]:[]).map(t=>[t.id,t]));
@@ -284,6 +315,7 @@
     for(const fresh of entry.traits){
       const old=existing.get(fresh.id);
       if(old){
+        old.passive??=fresh.passive;
         if(old.rank===fresh.rank){old.spellEffects??={...fresh.spellEffects};old.probe??={...fresh.probe};old.response??={...fresh.response};}
       }else{
         const line=c.report?.match(new RegExp(`^trait: id=${fresh.id} \\| .*?rank=(\\d+) \\| enabled=([01])`,'m'));
@@ -322,6 +354,7 @@
     c.attributeContext={...old,class:cls,spec,race,level:90,talents:old.class===cls&&old.spec===spec?(old.talents||''):'',dataVersion:entry?.dataVersion||old.dataVersion||''};
     c.mainType=mainTypeFor(cls,spec);
     const changedProfile=old.class!==cls||old.spec!==spec||!c.traits;
+    if(changedProfile){delete c.characterState;delete c.activeCharacterState;delete c.availableCharacterStates;}
     if(changedProfile)c.basePercents=Object.fromEntries(percentStats.map(key=>[key,null]));
     if(entry&&changedProfile){
       c.traits=structuredClone(entry.traits);
@@ -376,6 +409,12 @@
     const e=n=>t.spellEffects?.['e'+n], pct=(n,label)=>Number.isFinite(e(n))?`+${e(n)}%${label}`:'';
     const main=types[mainType]||'主属性';
     switch(t.id){
+      case 112224:return pct(1,'急速');
+      case 132883:return [pct(1,'力量'),pct(2,'暴击几率')].join('、');
+      case 125854:case 91489:return pct(2,'精通');
+      case 135921:return pct(2,'急速');
+      case 103744:return pct(1,'精通效果');
+      case 103311:return `人形：${pct(1,'急速')}；猎豹：${pct(1,'暴击')}；熊：${pct(1,'全能')}；枭兽：${pct(1,'精通')}`;
       case 112233:return `获得相当于护甲${e(spec==='protection'?3:2)}%的力量`;
       case 112235:return [pct(1,'耐力'),pct(2,'护甲')].join('、');
       case 112160:return pct(1,'护甲');
@@ -384,23 +423,23 @@
       case 102597:return [pct(2,'护甲'),pct(2,'暴击几率')].join('、');
       case 102612:return [pct(1,main),pct(2,'精通')].join('、');
       case 115034:return [pct(1,'耐力'),pct(3,'护甲')].join('、');
-      case 126447:return `暴击属性来源+${e(1)}%`;
+      case 126447:return pct(1,'暴击属性来源');
       case 136677:case 126332:case 112636:case 125074:return pct(t.id===126332?2:1,'敏捷')+(t.id===126332?`；双持额外+${e(3)}%敏捷`:'');
-      case 135502:return [pct(1,'精通'),`精通属性来源+${e(2)}%`].join('、');
+      case 135502:return [pct(1,'精通'),pct(2,'精通属性来源')].join('、');
       case 135734:return pct(1,'耐力');
       case 103818:case 135312:case 136103:case 136561:return pct(1,'智力');
       case 103837:case 127855:case 91438:case 96197:case 115609:case 103297:return pct(1,'耐力')+(t.id===103297?`；熊形态额外+${e(2)}%耐力`:'');
       case 136102:return pct(3,'耐力')+'（牺牲魔典生效时）';
       case 96183:return pct(1,'护甲');
-      case 124795:return [pct(1,'法术暴击几率'),`暴击属性来源+${e(2)}%`].join('、');
-      case 134540:return [pct(1,'急速'),`急速属性来源+${e(2)}%`].join('、');
+      case 124795:return [pct(1,'法术暴击几率'),pct(2,'暴击属性来源')].join('、');
+      case 134540:return [pct(1,'急速'),pct(2,'急速属性来源')].join('、');
       case 91463:return pct(4,'护甲');
-      case 124830:return `急速属性来源+${e(1)}%`;
+      case 124830:return pct(1,'急速属性来源');
       case 124882:return pct(2,'耐力');
       case 125025:return pct(3,'耐力');
       case 103303:return pct(1,'护甲');
       case 112845:return pct(1,'精通');
-      default:return '';
+      default:return Object.keys(t.percentEffect||{}).map(key=>{const value=e(1);return Number.isFinite(value)?`${value>=0?'+':''}${value}%${itemStats.find(([k])=>k===key)?.[1]||key}`:'属性加成';}).join('、')||'属性加成';
     }
   }
   function warriorArmorStrength(c){
@@ -457,6 +496,10 @@
   function zeroStats(){return Object.fromEntries(itemStats.map(([k])=>[k,0]));}
   function ensurePresets(c){
     c.items=c.items.filter(i=>!['enchant-8009','enchant-8007'].includes(i.presetId));
+    for(const i of c.items.filter(i=>i.slot==='enchant'&&i.presetId)){
+      const p=presets.items.find(p=>p.presetId===i.presetId);
+      if(p&&/^附魔[^\r\n]+? - /.test(i.name)&&i.name.replace(/^附魔[^\r\n]+? - /,'')===p.name)i.name=p.name;
+    }
     for(const p of presets.items)if(!c.items.some(i=>i.presetId===p.presetId)){
       c.items.push({...p,id:id(),origin:'custom',source:'preset',selected:false,mainType:p.supportedMainTypes?.length===1?p.supportedMainTypes[0]:c.mainType,adaptiveMain:!p.supportedMainTypes?.length,stats:{...zeroStats(),...p.stats},socket:false,embellishment:false,set:false});
     }
@@ -464,8 +507,28 @@
   }
   const gemGroups=['钻石','榴石','榄石','紫晶','青金石'];
   function gemGroup(item){
+    if(gemGroups.includes(item.gemGroup))return item.gemGroup;
     if(item.presetId){const name=presets.items.find(p=>p.presetId===item.presetId)?.name||item.name;return gemGroups.find(g=>name.includes(g))||null;}
     return null;
+  }
+  const maxGemColorsAvailable=c=>c.alwaysUseDiamond!==false&&c.items.some(i=>i.slot==='gem'&&i.selected&&i.uniqueGroup);
+  const gemColor=i=>i.uniqueGroup?null:gemGroup(i);
+  function maxGemColors(gems,n,requireDiamond){
+    return Math.min(new Set(gems.map(gemColor).filter(Boolean)).size,Math.max(0,n-(requireDiamond?1:0)));
+  }
+  // Count unordered allocations by sockets and distinct known colors.
+  function coloredGemWays(gems,maxSockets){
+    const groups=new Map();for(const g of gems.filter(g=>!g.uniqueGroup)){const color=gemColor(g);groups.set(color,(groups.get(color)||0)+1);}
+    let dp=Array.from({length:maxSockets+1},()=>Array(gemGroups.length).fill(0n));dp[0][0]=1n;
+    for(const [color,size]of groups){
+      const ways=[1n];for(let n=1;n<=maxSockets;n++)ways[n]=ways[n-1]*BigInt(size+n-1)/BigInt(n);
+      const next=Array.from({length:maxSockets+1},()=>Array(gemGroups.length).fill(0n));
+      for(let n=0;n<=maxSockets;n++)for(let k=0;k<gemGroups.length;k++)if(dp[n][k])for(let add=0;add<=maxSockets-n;add++){
+        const colors=k+(color&&add?1:0);if(colors<gemGroups.length)next[n+add][colors]+=dp[n][k]*ways[add];
+      }
+      dp=next;
+    }
+    return dp;
   }
   const sockets=i=>i.socketCount??(i.socket?1:0);
   const twoHanded=i=>i.slot==='main_hand'&&/^(?:sword2h|axe2h|mace2h|staff|polearm|bow|gun|crossbow)(?:_|$)/i.test(i.weaponType||'');
@@ -495,11 +558,11 @@
     let distribution=new Map([[0,1n]]),equipmentDistribution=new Map([[0,1n]]),hasEquipment=false;
     const missing=[];
     for(const [key,label,capacity]of getSlots(c).filter(([key])=>detailSlot(key))){
-      if(key==='off_hand'&&c.items.some(i=>i.slot==='main_hand'))continue;
+      if(key==='off_hand'&&c.items.some(i=>i.slot==='main_hand'&&i.selected))continue;
       const all=c.items.filter(i=>i.slot===key);if(!all.length)continue;
       if(!usageSlot(key))hasEquipment=true;
       const selected=all.filter(i=>i.selected),take=Math.min(capacity,all.length);
-      if((key==='off_hand'||key.startsWith('custom_'))&&!selected.length)continue;
+      if(!selected.length)continue;
       if(selected.length<take){missing.push(`${label}需选 ${take} 件`);continue;}
       if(key==='main_hand'){
         const off=c.items.filter(i=>i.slot==='off_hand'&&i.selected);
@@ -534,9 +597,10 @@
     const maxSockets=Math.max(...distribution.keys());
     // Fill all sockets: C(g + n - 1, n), unordered with repetition.
     const ordinaryWays=[1n];for(let n=1;n<=maxSockets;n++)ordinaryWays[n]=ordinaryWays[n-1]*BigInt(ordinary+n-1)/BigInt(n);
+    const coloredWays=c.onlyMaxGemColors&&maxGemColorsAvailable(c)?coloredGemWays(gems,maxSockets):null;
     let total=0n;
     for(const [n,equipmentWays]of distribution){
-      let gemWays=gems.length?0n:1n;if(gems.length)for(const [used,ways]of uniqueWays)if(used<=n)gemWays+=ways*ordinaryWays[n-used];
+      let gemWays=gems.length?0n:1n;if(gems.length)for(const [used,ways]of uniqueWays)if(used<=n)gemWays+=ways*(coloredWays?coloredWays[n-used][maxGemColors(gems,n,diamondCount>0&&c.alwaysUseDiamond!==false)]:ordinaryWays[n-used]);
       total+=equipmentWays*gemWays;
     }
     if(!total&&gems.length)missing.push(diamondCount&&c.alwaysUseDiamond!==false&&!maxSockets?'已选钻石需要至少一个孔位':'所选宝石无法填满孔位，请增加普通宝石候选');
@@ -572,6 +636,6 @@
     validateState({version:2,activeId:c.id,characters:[c]});
     s.closedCharacters.pop();s.characters.push(c);s.activeId=c.id;return true;
   }
-  const api={tagPalette,presetTagColors,detailSlot,tagColor,setCustomTagNames,tagKey,tagColumns,syncTagSettings,tierSlots,itemStats,displayStats,toggleLock,toggleSelected,enchantSlots,enchantPool,enchantChoices,twoHanded,presets,ensurePresets,usageSlot,gemGroups,gemGroup,combinationCount,attachEquippedGems,getSlots,addSlot,renameSlot,removeSlot,candidates,closeCharacter,reopenCharacter,slots,stats,types,classes,races,raceGroups,classLabels,specLabels,mainTypeFor,id,emptyStats,newCharacter,newState,validateState,parseReport,baseline,upsert,removeCustomItem,applyImport,applyProfile,editDisplayedStat,selectProfile,toggleTrait,traitDescription,scaledStat,scaledStats,prepareProfileInput};
+  const api={maxGemColorsAvailable,gemColor,maxGemColors,characterStateLabels,characterStateNames,validCharacterState,applyCharacterState,tagPalette,presetTagColors,detailSlot,tagColor,setCustomTagNames,tagKey,tagColumns,syncTagSettings,tierSlots,itemStats,displayStats,toggleLock,toggleSelected,enchantSlots,enchantPool,enchantChoices,twoHanded,presets,ensurePresets,usageSlot,gemGroups,gemGroup,combinationCount,attachEquippedGems,getSlots,addSlot,renameSlot,removeSlot,candidates,closeCharacter,reopenCharacter,slots,stats,types,classes,races,raceGroups,classLabels,specLabels,mainTypeFor,id,emptyStats,newCharacter,newState,validateState,parseReport,baseline,upsert,removeCustomItem,applyImport,applyProfile,editDisplayedStat,selectProfile,toggleTrait,traitDescription,scaledStat,scaledStats,prepareProfileInput};
   if(typeof module !== 'undefined')module.exports=api; else root.GearModel=api;
 })(globalThis);

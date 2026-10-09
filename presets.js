@@ -350,7 +350,7 @@ const data={
     {
       "presetId": "enchant-8019",
       "enchantId": 8019,
-      "name": "附魔靴子 - 远行者的狩猎",
+      "name": "远行者的狩猎",
       "englishName": "Enchant Boots - Farstrider's Hunt",
       "slot": "enchant",
       "enchantSlot": "feet",
@@ -368,7 +368,7 @@ const data={
     {
       "presetId": "enchant-7963",
       "enchantId": 7963,
-      "name": "附魔靴子 - 山猫之敏",
+      "name": "山猫之敏",
       "englishName": "Enchant Boots - Lynx's Dexterity",
       "slot": "enchant",
       "enchantSlot": "feet",
@@ -386,7 +386,7 @@ const data={
     {
       "presetId": "enchant-7993",
       "enchantId": 7993,
-      "name": "附魔靴子 - 莎拉达希尔之根",
+      "name": "莎拉达希尔之根",
       "englishName": "Enchant Boots - Shaladrassil's Roots",
       "slot": "enchant",
       "enchantSlot": "feet",
@@ -404,7 +404,7 @@ const data={
     {
       "presetId": "enchant-7957",
       "enchantId": 7957,
-      "name": "附魔胸甲 - 纳洛拉克印记",
+      "name": "纳洛拉克印记",
       "englishName": "Enchant Chest - Mark of Nalorakk",
       "slot": "enchant",
       "enchantSlot": "chest",
@@ -424,7 +424,7 @@ const data={
     {
       "presetId": "enchant-8013",
       "enchantId": 8013,
-      "name": "附魔胸甲 - 魔导师印记",
+      "name": "魔导师印记",
       "englishName": "Enchant Chest - Mark of the Magister",
       "slot": "enchant",
       "enchantSlot": "chest",
@@ -443,7 +443,7 @@ const data={
     {
       "presetId": "enchant-7985",
       "enchantId": 7985,
-      "name": "附魔胸甲 - 护根者印记",
+      "name": "护根者印记",
       "englishName": "Enchant Chest - Mark of the Rootwarden",
       "slot": "enchant",
       "enchantSlot": "chest",
@@ -463,7 +463,7 @@ const data={
     {
       "presetId": "enchant-7987",
       "enchantId": 7987,
-      "name": "附魔胸甲 - 世界之魂印记",
+      "name": "世界之魂印记",
       "englishName": "Enchant Chest - Mark of the Worldsoul",
       "slot": "enchant",
       "enchantSlot": "chest",
@@ -480,7 +480,7 @@ const data={
     {
       "presetId": "enchant-7991",
       "enchantId": 7991,
-      "name": "附魔头盔 - 强化加速祝福",
+      "name": "强化加速祝福",
       "englishName": "Enchant Helm - Empowered Blessing of Speed",
       "slot": "enchant",
       "enchantSlot": "head",
@@ -497,7 +497,7 @@ const data={
     {
       "presetId": "enchant-7961",
       "enchantId": 7961,
-      "name": "附魔头盔 - 强化吸血妖术",
+      "name": "强化吸血妖术",
       "englishName": "Enchant Helm - Empowered Hex of Leeching",
       "slot": "enchant",
       "enchantSlot": "head",
@@ -514,7 +514,7 @@ const data={
     {
       "presetId": "enchant-8017",
       "enchantId": 8017,
-      "name": "附魔头盔 - 强化闪避符文",
+      "name": "强化闪避符文",
       "englishName": "Enchant Helm - Empowered Rune of Avoidance",
       "slot": "enchant",
       "enchantSlot": "head",
@@ -531,7 +531,7 @@ const data={
     {
       "presetId": "enchant-7967",
       "enchantId": 7967,
-      "name": "附魔戒指 - 鹰眼神视",
+      "name": "鹰眼神视",
       "englishName": "Enchant Ring - Eyes of the Eagle",
       "slot": "enchant",
       "enchantSlot": "finger",
@@ -546,7 +546,7 @@ const data={
     {
       "presetId": "enchant-7997",
       "enchantId": 7997,
-      "name": "附魔戒指 - 自然之怒",
+      "name": "自然之怒",
       "englishName": "Enchant Ring - Nature's Fury",
       "slot": "enchant",
       "enchantSlot": "finger",
@@ -563,7 +563,7 @@ const data={
     {
       "presetId": "enchant-8025",
       "enchantId": 8025,
-      "name": "附魔戒指 - 银月城之捷",
+      "name": "银月城之捷",
       "englishName": "Enchant Ring - Silvermoon's Alacrity",
       "slot": "enchant",
       "enchantSlot": "finger",
@@ -580,7 +580,7 @@ const data={
     {
       "presetId": "enchant-8027",
       "enchantId": 8027,
-      "name": "附魔戒指 - 银月城之韧",
+      "name": "银月城之韧",
       "englishName": "Enchant Ring - Silvermoon's Tenacity",
       "slot": "enchant",
       "enchantSlot": "finger",
@@ -597,7 +597,7 @@ const data={
     {
       "presetId": "enchant-7969",
       "enchantId": 7969,
-      "name": "附魔戒指 - 祖尔金的精通",
+      "name": "祖尔金的精通",
       "englishName": "Enchant Ring - Zul'jin's Mastery",
       "slot": "enchant",
       "enchantSlot": "finger",
@@ -614,7 +614,7 @@ const data={
     {
       "presetId": "enchant-7973",
       "enchantId": 7973,
-      "name": "附魔护肩 - 埃基尔松的迅捷",
+      "name": "埃基尔松的迅捷",
       "englishName": "Enchant Shoulders - Akil'zon's Swiftness",
       "slot": "enchant",
       "enchantSlot": "shoulders",
@@ -631,7 +631,7 @@ const data={
     {
       "presetId": "enchant-8001",
       "enchantId": 8001,
-      "name": "附魔护肩 - 阿梅达希尔之赐",
+      "name": "阿梅达希尔之赐",
       "englishName": "Enchant Shoulders - Amirdrassil's Grace",
       "slot": "enchant",
       "enchantSlot": "shoulders",
@@ -648,7 +648,7 @@ const data={
     {
       "presetId": "enchant-8031",
       "enchantId": 8031,
-      "name": "附魔护肩 - 银月城治愈",
+      "name": "银月城治愈",
       "englishName": "Enchant Shoulders - Silvermoon's Mending",
       "slot": "enchant",
       "enchantSlot": "shoulders",
@@ -665,7 +665,7 @@ const data={
     {
       "presetId": "enchant-8039",
       "enchantId": 8039,
-      "name": "附魔武器 - 朗多雷之锐",
+      "name": "朗多雷之锐",
       "englishName": "Enchant Weapon - Acuity of the Ren'dorei",
       "slot": "enchant",
       "enchantSlot": "weapon",
@@ -680,7 +680,7 @@ const data={
     {
       "presetId": "enchant-8041",
       "enchantId": 8041,
-      "name": "附魔武器 - 奥术精通",
+      "name": "奥术精通",
       "englishName": "Enchant Weapon - Arcane Mastery",
       "slot": "enchant",
       "enchantSlot": "weapon",
@@ -695,7 +695,7 @@ const data={
     {
       "presetId": "enchant-7983",
       "enchantId": 7983,
-      "name": "附魔武器 - 狂战士之怒",
+      "name": "狂战士之怒",
       "englishName": "Enchant Weapon - Berserker's Rage",
       "slot": "enchant",
       "enchantSlot": "weapon",
@@ -710,7 +710,7 @@ const data={
     {
       "presetId": "enchant-8037",
       "enchantId": 8037,
-      "name": "附魔武器 - 辛多雷之焰",
+      "name": "辛多雷之焰",
       "englishName": "Enchant Weapon - Flames of the Sin'dorei",
       "slot": "enchant",
       "enchantSlot": "weapon",
@@ -725,7 +725,7 @@ const data={
     {
       "presetId": "enchant-7981",
       "enchantId": 7981,
-      "name": "附魔武器 - 加亚莱的精准",
+      "name": "加亚莱的精准",
       "englishName": "Enchant Weapon - Jan'alai's Precision",
       "slot": "enchant",
       "enchantSlot": "weapon",
@@ -740,7 +740,7 @@ const data={
     {
       "presetId": "enchant-8689",
       "enchantId": 8689,
-      "name": "附魔武器 - 哈谢仪式",
+      "name": "哈谢仪式",
       "englishName": "Enchant Weapon - Rite of the Hash'ey",
       "slot": "enchant",
       "enchantSlot": "weapon",
@@ -755,7 +755,7 @@ const data={
     {
       "presetId": "enchant-7979",
       "enchantId": 7979,
-      "name": "附魔武器 - 哈尔拉兹之力",
+      "name": "哈尔拉兹之力",
       "englishName": "Enchant Weapon - Strength of Halazzi",
       "slot": "enchant",
       "enchantSlot": "weapon",
@@ -770,7 +770,7 @@ const data={
     {
       "presetId": "enchant-8011",
       "enchantId": 8011,
-      "name": "附魔武器 - 世界之魂的坚韧",
+      "name": "世界之魂的坚韧",
       "englishName": "Enchant Weapon - Worldsoul Tenacity",
       "slot": "enchant",
       "enchantSlot": "weapon",

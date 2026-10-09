@@ -23,7 +23,7 @@ module.exports=async({win,output})=>{
  assert.equal(await js(`document.querySelectorAll('[data-item-tag]:checked').length`),0);
  await click('[data-close="editor"]');
  assert.deepEqual(await js(`current().items.find(i=>i.name==='毕业头').customTags`),['毕业',special]);
- assert.equal(await js(`document.querySelector('#item-boe')`),null);assert.equal(await js(`document.querySelector('#item-tag-name').placeholder`),'例：BOE');assert.equal(await js(`document.querySelector('#sort-expression').placeholder`),'例：暴击+急速+精通+全能');
+ assert.equal(await js(`document.querySelector('#item-boe')`),null);assert.equal(await js(`document.querySelector('#item-tag-name').placeholder`),'例：BOE、未获取');assert.equal(await js(`document.querySelector('#sort-expression').placeholder`),'例：暴击+急速+精通+全能');
  await js(`openEditor('neck')`);assert(await js(`!document.querySelector('#item-set').disabled&&!document.querySelector('#set-group-field').hidden`));await click('[data-close="editor"]');
  await js(`openEditor('head',current().items.find(i=>i.name==='毕业头'))`);
  await fill('#item-level','300');await click('#item-set');await fill('#item-set-group','A');await click('#item-embellishment');await fill('#item-tag-name','BOE');await click('#add-item-tag');await js(`document.querySelector('#edit-form').requestSubmit()`);await saved();

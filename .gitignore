@@ -9,3 +9,4 @@ engine/simc-source/
 *.log
 
 build-workspace-test/
+/.tmp/

@@ -3,7 +3,7 @@
 const M=typeof module!=='undefined'?require('./model.js'):root.GearModel;
 const Rating=typeof module!=='undefined'?require('./rating.js'):root.RatingConversion;
 const comparisonOperators=['>','>=','<','<=','='];
-const keys=M.itemStats.map(([k])=>k),sortKeys=[...keys,'tier','embellishments','boe'],zero=()=>Object.fromEntries(keys.map(k=>[k,0]));
+const keys=M.itemStats.map(([k])=>k),sortKeys=[...keys,'sockets','tier','embellishments','boe'],zero=()=>Object.fromEntries(keys.map(k=>[k,0]));
 const operators=['+','-','*','/'];
 const names=Object.fromEntries(M.itemStats.map(([key,label])=>[label,key]));
 Object.assign(names,{力量:'main',敏捷:'main',智力:'main',主属性:'main'});
@@ -76,11 +76,11 @@ function matchesComparison(c,rule,stats){
 function settings(c,defaults=defaultRanges(c)){
  const ranges={};for(const [k,label]of M.itemStats){const r=c.filters?.ranges?.[k]||{};ranges[k]={};for(const bound of ['min','max']){let v=r[bound];if(v===undefined||v===null||v==='')v=defaults[k]?.[bound];if(v===undefined)continue;const n=Number(v);if(!Number.isFinite(n)||n<0||n>1e9)throw Error(label+'范围须为 0–10亿 的数值');ranges[k][bound]=n;}if(ranges[k].min>ranges[k].max)throw Error(label+'最低值不能大于最高值');}
  const countDefaults=defaults.countRanges??defaultCountRanges(c);
- const counts={};for(const [key,label]of [['tier','套装'],['embellishment','美化'],['boe','BOE'],...M.tagColumns(c)]){
+ const counts={};for(const [key,label]of [['sockets','孔'],['tier','套装'],['embellishment','美化'],['boe','BOE'],...M.tagColumns(c)]){
   const old=c.filters?.[key];const legacy=key==='tier'?(old==null||old===''||Number(old)===0?{}:{min:old}):(old==null||old===''?{}:{min:old,max:old});
   const range=c.filters?.counts?.[key]??legacy;counts[key]={...countDefaults[key]};
-  for(const bound of ['min','max']){const value=range[bound];if(value===undefined||value===null||value==='')continue;const n=Number(value);if(!Number.isInteger(n)||n<0||n>16)throw Error(label+'数量须为 0–16 的整数');counts[key][bound]=n;}
-  if(range.min!==undefined&&range.min!==null&&range.min!==''&&range.max!==undefined&&range.max!==null&&range.max!==''&&counts[key].min>counts[key].max)throw Error(label+'最少件数不能大于最多件数');
+  for(const bound of ['min','max']){const value=range[bound];if(value===undefined||value===null||value==='')continue;const n=Number(value),maximum=key==='sockets'?1e9:16;if(!Number.isInteger(n)||n<0||n>maximum)throw Error(label+`数量须为 0–${maximum} 的整数`);counts[key][bound]=n;}
+  if(range.min!==undefined&&range.min!==null&&range.min!==''&&range.max!==undefined&&range.max!==null&&range.max!==''&&counts[key].min>counts[key].max)throw Error(label+(key==='sockets'?'最少孔数不能大于最多孔数':'最少件数不能大于最多件数'));
  }
  const rules=validateRules(sortRules(c),M.tagColumns(c).map(([key])=>key)),limit=c.sort?.limit==='all'?Infinity:Number(c.sort?.limit||100);
  if(![50,100,500,Infinity].includes(limit))throw Error('展示数量无效');
@@ -88,9 +88,9 @@ function settings(c,defaults=defaultRanges(c)){
 }
 const tierGroup=i=>i.setGroup?.trim()||(i.setId>0?String(i.setId):'');
 function defaultCountRanges(c){
- const empty={tier:{min:0,max:0},embellishment:{min:0,max:0},boe:{min:0,max:0},...Object.fromEntries(M.tagColumns(c).map(([key])=>[key,{min:0,max:0}]))};
+ const empty={sockets:{min:0,max:0},tier:{min:0,max:0},embellishment:{min:0,max:0},boe:{min:0,max:0},...Object.fromEntries(M.tagColumns(c).map(([key])=>[key,{min:0,max:0}]))};
  if(!M.combinationCount(c).total)return empty;
- const hasMain=c.items.some(i=>i.slot==='main_hand'),groups=M.getSlots(c).filter(([slot])=>M.detailSlot(slot)&&!(hasMain&&slot==='off_hand'));
+ const hasMain=c.items.some(i=>i.slot==='main_hand'&&i.selected),groups=M.getSlots(c).filter(([slot])=>M.detailSlot(slot)&&!(hasMain&&slot==='off_hand'));
  const gems=c.items.filter(i=>i.slot==='gem'&&i.selected),ordinary=gems.some(i=>!i.uniqueGroup),unique=gems.some(i=>i.uniqueGroup),requireUnique=unique&&c.alwaysUseDiamond!==false;
  const feasible=s=>!gems.length||ordinary&&(!requireUnique||s>=1)||!ordinary&&unique&&(s===1||!requireUnique&&s===0);
  const sockets=i=>i.socketCount??(i.socket?1:0);
@@ -100,7 +100,7 @@ function defaultCountRanges(c){
   for(const [slot,,capacity]of groups){
    if(!include(slot))continue;
    const all=c.items.filter(i=>i.slot===slot);if(!all.length)continue;
-   const selected=all.filter(i=>i.selected),take=Math.min(capacity,all.length);if((slot==='off_hand'||slot.startsWith('custom_'))&&!selected.length)continue;
+   const selected=all.filter(i=>i.selected),take=Math.min(capacity,all.length);if(!selected.length)continue;
    const options=new Map();
    if(slot==='main_hand'){
     const off=c.items.filter(i=>i.slot==='off_hand'&&i.selected);
@@ -119,7 +119,7 @@ function defaultCountRanges(c){
   return states;
  };
  const extremesFor=matches=>{const values=[...statesFor(matches)].filter(([s])=>feasible(s)).map(([,value])=>value);return values.length?{min:Math.min(...values.map(v=>v[0])),max:Math.max(...values.map(v=>v[1]))}:{min:0,max:0};};
- const tierGroups=groups.filter(([slot])=>c.items.some(i=>i.selected&&i.set&&(i.slot===slot||slot==='main_hand'&&i.slot==='off_hand')));
+ const tierGroups=groups.filter(([slot])=>c.items.some(i=>i.selected&&i.set&&(i.slot===slot||hasMain&&slot==='main_hand'&&i.slot==='off_hand')));
  const tierGroupSlots=new Set(tierGroups.map(([slot])=>slot));
  const otherSockets=[...statesFor(()=>false,slot=>!tierGroupSlots.has(slot)).keys()];
  const choices=tierGroups.map(([slot,,capacity])=>{
@@ -134,7 +134,8 @@ function defaultCountRanges(c){
  const visit=(index,s,currentMax)=>{if(currentMax>=tierMin)return;if(index===choices.length){if(otherSockets.some(other=>feasible(s+other)))tierMin=currentMax;return;}for(const choice of choices[index]){const previous=choice.groups.map(([key,count])=>[key,used.get(key)||0,count]);let nextMax=currentMax;for(const [key,old,count]of previous){used.set(key,old+count);nextMax=Math.max(nextMax,old+count);}visit(index+1,s+choice.s,nextMax);for(const [key,old]of previous){if(old)used.set(key,old);else used.delete(key);}if(tierMin===0)return;}};
  visit(0,0,0);
  const setGroups=new Set(c.items.filter(i=>i.selected&&i.set&&M.detailSlot(i.slot)).map(i=>tierGroup(i)||'unknown:'+i.id));
- return {tier:{min:Number.isFinite(tierMin)?tierMin:0,max:Math.max(0,...[...setGroups].map(group=>extremesFor(i=>i.set&&M.detailSlot(i.slot)&&(tierGroup(i)||'unknown:'+i.id)===group).max))},embellishment:extremesFor(i=>i.embellishment),boe:extremesFor(i=>i.boe),...Object.fromEntries(M.tagColumns(c).map(([key,name])=>[key,extremesFor(i=>i.customTags?.includes(name))]))};
+ const attainableSockets=[...statesFor(()=>false).keys()].filter(feasible);
+ return {sockets:attainableSockets.length?{min:Math.min(...attainableSockets),max:Math.max(...attainableSockets)}:empty.sockets,tier:{min:Number.isFinite(tierMin)?tierMin:0,max:Math.max(0,...[...setGroups].map(group=>extremesFor(i=>i.set&&M.detailSlot(i.slot)&&(tierGroup(i)||'unknown:'+i.id)===group).max))},embellishment:extremesFor(i=>i.embellishment),boe:extremesFor(i=>i.boe),...Object.fromEntries(M.tagColumns(c).map(([key,name])=>[key,extremesFor(i=>i.customTags?.includes(name))]))};
 }
 function validate(c){
  const config=settings(c);
@@ -147,8 +148,8 @@ function statsFor(c,i){const out={...zero(),...i.stats};if(i.supportedMainTypes?
 // Exact attainable bounds for each individual attribute, including mandatory picks and socket counts.
 function defaultRanges(c){
  const result={},rawBounds={};if(!M.combinationCount(c).total)return result;
- const hasMain=c.items.some(i=>i.slot==='main_hand');
- const groups=M.getSlots(c).filter(([k])=>M.detailSlot(k)&&!(hasMain&&k==='off_hand')).map(([slot,,cap])=>{const all=c.items.filter(i=>i.slot===slot);return {slot,items:all.filter(i=>i.selected),take:Math.min(cap,all.length)};}).filter(g=>g.take&&!((g.slot==='off_hand'||g.slot.startsWith('custom_'))&&!g.items.length));
+ const hasMain=c.items.some(i=>i.slot==='main_hand'&&i.selected);
+ const groups=M.getSlots(c).filter(([k])=>M.detailSlot(k)&&!(hasMain&&k==='off_hand')).map(([slot,,cap])=>{const all=c.items.filter(i=>i.slot===slot);return {slot,items:all.filter(i=>i.selected),take:Math.min(cap,all.length)};}).filter(g=>g.take&&g.items.length);
  const gems=c.items.filter(i=>i.slot==='gem'&&i.selected),fixed=new Map(c.items.map(i=>[i.id,statsFor(c,i)]));
  const enchants=new Map(c.items.filter(i=>M.detailSlot(i.slot)).map(i=>[i.id,M.enchantPool(c,i)]));
  const merge=(out,key,lo,hi)=>{const old=out.get(key);out.set(key,old?[Math.min(old[0],lo),Math.max(old[1],hi)]:[lo,hi]);};
@@ -199,23 +200,25 @@ function defaultRanges(c){
 
 function* choose(items,take,start=0,picked=[]){if(!take){yield picked;return;}for(let n=start;n<=items.length-take;n++)yield* choose(items,take-1,n+1,[...picked,items[n]]);}
 function* physical(c,groups,index=0,chosen=[]){if(index===groups.length){const main=chosen.find(i=>i.slot==='main_hand'),off=c.items.filter(i=>i.slot==='off_hand'&&i.selected);if(main&&!M.twoHanded(main)&&off.length){for(const item of off)yield [...chosen,item];}else yield chosen;return;}const {items,take}=groups[index],locks=items.filter(i=>i.locked);for(const rest of choose(items.filter(i=>!i.locked),take-locks.length))yield* physical(c,groups,index+1,[...chosen,...locks,...rest]);}
-function* gemOptions(gems,left,requireDiamond,index=0,used=new Set(),chosen=[]){
+function* gemOptions(gems,left,requireDiamond,target=0,index=0,used=new Set(),chosen=[],colors=new Set()){
  if(!gems.length){yield [];return;}
- if(index===gems.length){if(left===0&&(!requireDiamond||used.size))yield chosen;return;}
+ if(colors.size+left<target||new Set([...colors,...gems.slice(index).map(M.gemColor).filter(Boolean)]).size<target)return;
+ if(index===gems.length){if(left===0&&(!requireDiamond||used.size)&&colors.size>=target)yield chosen;return;}
  const g=gems[index],max=g.uniqueGroup?(used.size?0:Math.min(1,left)):left;
- for(let n=0;n<=max;n++){const next=new Set(used);if(n&&g.uniqueGroup)next.add(g.uniqueGroup);yield* gemOptions(gems,left-n,requireDiamond,index+1,next,n?[...chosen,{id:g.id,count:n}]:chosen);}
+ for(let n=0;n<=max;n++){const next=new Set(used);if(n&&g.uniqueGroup)next.add(g.uniqueGroup);const nextColors=new Set(colors);if(n&&M.gemColor(g))nextColors.add(M.gemColor(g));yield* gemOptions(gems,left-n,requireDiamond,target,index+1,next,n?[...chosen,{id:g.id,count:n}]:chosen,nextColors);}
 }
 function* products(groups,index=0,chosen=[]){if(index===groups.length){yield chosen;return;}for(const value of groups[index])yield* products(groups,index+1,[...chosen,value]);}
 function* combinations(c){
- const hasMain=c.items.some(i=>i.slot==='main_hand');
- const groups=[];for(const [slot,,cap]of M.getSlots(c).filter(([k])=>M.detailSlot(k)&&!(hasMain&&k==='off_hand'))){const all=c.items.filter(i=>i.slot===slot);if(!all.length)continue;const items=all.filter(i=>i.selected);if((slot==='off_hand'||slot.startsWith('custom_'))&&!items.length)continue;const take=Math.min(cap,all.length);if(items.length<take||items.filter(i=>i.locked).length>take)return;groups.push({items,take});}
+ const hasMain=c.items.some(i=>i.slot==='main_hand'&&i.selected);
+ const groups=[];for(const [slot,,cap]of M.getSlots(c).filter(([k])=>M.detailSlot(k)&&!(hasMain&&k==='off_hand'))){const all=c.items.filter(i=>i.slot===slot);if(!all.length)continue;const items=all.filter(i=>i.selected);if(!items.length)continue;const take=Math.min(cap,all.length);if(items.length<take||items.filter(i=>i.locked).length>take)return;groups.push({items,take});}
  if(!groups.length)return;
  const gems=c.items.filter(i=>i.slot==='gem'&&i.selected),usage=M.getSlots(c).filter(([k])=>M.usageSlot(k)&&!M.detailSlot(k)&&!['gem','enchant'].includes(k)).map(([k])=>c.items.filter(i=>i.slot===k&&i.selected)).filter(a=>a.length);
  for(const gear of physical(c,groups)){
   yield null; // Yield work even when a gear set has no feasible gem allocation.
   const socketCount=gear.reduce((n,i)=>n+(i.socketCount??(i.socket?1:0)),0);
   const enchantGroups=gear.map(i=>{const pool=M.enchantPool(c,i);return pool.length?pool.map(e=>({id:e.id,target:i.id})):[];}).filter(a=>a.length);
-  for(const gem of gemOptions(gems,socketCount,c.alwaysUseDiamond!==false&&gems.some(i=>i.uniqueGroup)))for(const consumables of products(usage))for(const enchants of products(enchantGroups))yield {gear:gear.filter(i=>!i.slot.startsWith('custom_')).map(i=>i.id),gems:gem,consumables:[...consumables,...gear.filter(i=>i.slot.startsWith('custom_'))].map(i=>i.id),enchants,sockets:socketCount};
+  const requireDiamond=c.alwaysUseDiamond!==false&&gems.some(i=>i.uniqueGroup);
+  for(const gem of gemOptions(gems,socketCount,requireDiamond,c.onlyMaxGemColors&&M.maxGemColorsAvailable(c)?M.maxGemColors(gems,socketCount,requireDiamond):0))for(const consumables of products(usage))for(const enchants of products(enchantGroups))yield {gear:gear.filter(i=>!i.slot.startsWith('custom_')).map(i=>i.id),gems:gem,consumables:[...consumables,...gear.filter(i=>i.slot.startsWith('custom_'))].map(i=>i.id),enchants,sockets:socketCount};
  }
 }
 class TopRows{
@@ -236,11 +239,11 @@ function createSearch(c){
   const weapon=id=>{const item=byId.get(id);return item&&['main_hand','off_hand'].includes(item.slot)&&!/none|shield|2h/.test(item.weaponType||'');};
   const dualWield=combo.gear.filter(weapon).length===2;
   Object.assign(total,M.scaledStats(c,Object.fromEntries(keys.map(k=>[k,total[k]-c.baseStats[k]])),{dualWield}));
-  const tier=Math.max(0,...sets.values()),counts={tier,embellishment:embellishments,boe,...tagCounts};
+  const tier=Math.max(0,...sets.values()),counts={sockets:combo.sockets,tier,embellishment:embellishments,boe,...tagCounts};
   for(const [key,value]of Object.entries(counts)){const range=config.counts[key];if(range.min!==undefined&&value<range.min||range.max!==undefined&&value>range.max)return;}
   for(const k of keys){const r=config.ranges[k];if(r.min!==undefined&&total[k]<r.min||r.max!==undefined&&total[k]>r.max)return;}
   if(!config.comparisons.every(rule=>matchesComparison(c,rule,total)))return;
-  const sortContext={...total,tier,embellishments,boe,...tagCounts};
+  const sortContext={...total,sockets:combo.sockets,tier,embellishments,boe,...tagCounts};
   matched++;top.add({...combo,stats:total,tier,sets:[...sets],embellishments,boe,tagCounts,index:visited,sortValues:config.rules.map(r=>ruleValue(r,sortContext)),combinationId:combinationId(combo)});
  }
  return {step(budget=1000){for(let n=0;n<budget&&!done;n++){const next=iterator.next();if(next.done){done=true;break;}if(next.value){visited++;evaluate(next.value);}}return done;},snapshot(){return {done,visited,matched,total:count.total,missing:count.missing,rows:top.sorted()};}};

@@ -69,3 +69,19 @@ const unlimited=character(Array.from({length:625},(_,n)=>item('head',{main:n})))
 for(const direction of ['asc','desc']){unlimited.sort={rules:[{type:'stat',stat:'main',direction}],limit:'all'};const result=run(unlimited);assert.equal(result.matched,625n);assert.equal(result.rows.length,625);assert.deepEqual(result.rows.map(row=>row.stats.main),Array.from({length:625},(_,n)=>10+(direction==='asc'?n:624-n)));}
 unlimited.filters={ranges:{main:{min:20,max:30}}};assert.equal(run(unlimited).rows.length,11);unlimited.sort.limit='invalid';assert.throws(()=>run(unlimited),/展示数量无效/);
 console.log('PASS: default top 100, unlimited all matching rows above 500, ascending/descending order, filters and invalid limits.');
+
+// Fully unselected equipment slots are omitted from counts, bounds and results.
+{
+ const kept=item('head',{main:12,haste:7},{socketCount:1,set:true,setGroup:'A',boe:true});
+ const omitted=['neck','shoulders','back','chest','wrists','hands','waist','legs','feet','finger','trinket','main_hand','off_hand'].map(slot=>item(slot,{main:900,haste:900},{selected:false,socketCount:9,set:true,setGroup:'B',boe:true,embellishment:true}));
+ const c=character([kept,...omitted,item('gem',{haste:3}),item('enchant',{main:800},{enchantSlot:'neck'})]);
+ const count=M.combinationCount(c);assert.equal(count.total,1n);assert.deepEqual(count.missing,[]);
+ const result=run(c);assert.equal(result.visited,count.total);assert.equal(result.matched,1n);assert.deepEqual(result.rows[0].gear,[kept.id]);assert.equal(result.rows[0].stats.main,22);assert.equal(result.rows[0].stats.haste,10);assert.equal(result.rows[0].enchants.length,0);
+ assert.deepEqual(S.defaultRanges(c).main,{min:22,max:22});assert.deepEqual(S.defaultRanges(c).haste,{min:10,max:10});assert.deepEqual(S.defaultCountRanges(c),{sockets:{min:1,max:1},tier:{min:1,max:1},embellishment:{min:0,max:0},boe:{min:1,max:1}});
+ M.toggleSelected(c,omitted[0]);assert.equal(run(c).rows[0].stats.main,1722);M.toggleSelected(c,omitted[0]);assert.equal(run(c).rows[0].stats.main,22);
+ const off=item('off_hand',{main:8},{weaponType:'shield',socketCount:2,set:true,setGroup:'A',boe:true});
+ const weapons=character([item('main_hand',{main:999},{selected:false,weaponType:'staff'}),off]);
+ assert.equal(M.combinationCount(weapons).total,1n);assert.deepEqual(run(weapons).rows[0].gear,[off.id]);assert.deepEqual(S.defaultRanges(weapons).main,{min:18,max:18});assert.deepEqual(S.defaultCountRanges(weapons),{sockets:{min:2,max:2},tier:{min:1,max:1},embellishment:{min:0,max:0},boe:{min:1,max:1}});
+ off.selected=false;assert.equal(M.combinationCount(weapons).total,0n);assert.equal(run(weapons).visited,0n);
+ const pair=character([item('head'),item('finger',{}, {selected:false}),item('finger',{}, {selected:false})]);assert.equal(run(pair).matched,1n);pair.items[1].selected=true;assert.equal(M.combinationCount(pair).total,0n);assert.deepEqual(M.combinationCount(pair).missing,['戒指需选 2 件']);
+}

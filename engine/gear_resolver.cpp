@@ -18,6 +18,57 @@
 #endif
 
 namespace {
+// Persistent personal states only; never execute the precombat APL.
+std::vector<std::string> state_names(player_t* p) {
+  if(p->type==WARRIOR)return {"battle_stance","defensive_stance","berserker_stance"};
+  if(p->type==DRUID)return {"bear_form","cat_form","moonkin_form"};
+  if(p->specialization()==PRIEST_SHADOW)return {"shadowform"};
+  return {};
+}
+void create_state_actions(player_t* p) {
+  for(const auto& name:state_names(p)) {
+    auto* a=p->create_action(name,p->type==WARRIOR?"toggle=on":"");
+    if(a){a->background=true;a->callbacks=false;}
+  }
+}
+std::string default_state(player_t* p) {
+  switch(p->specialization()) {
+    case WARRIOR_ARMS:return "battle_stance";
+    case WARRIOR_FURY:return "berserker_stance";
+    case WARRIOR_PROTECTION:return "defensive_stance";
+    case DRUID_GUARDIAN:return "bear_form";
+    case DRUID_FERAL:return "cat_form";
+    case DRUID_BALANCE:return "moonkin_form";
+    case PRIEST_SHADOW:return "shadowform";
+    default:return "none";
+  }
+}
+bool state_available(player_t* p,const std::string& name) {
+  if(name=="none")return true;
+  const auto names=state_names(p);
+  if(std::find(names.begin(),names.end(),name)==names.end())return false;
+  auto* a=p->find_action(name);return a&&a->data().ok();
+}
+std::string selected_state(player_t* p,const std::string& requested) {
+  const auto name=requested=="auto"?default_state(p):requested;
+  return state_available(p,name)?name:"none";
+}
+std::string requested_state="none";
+void reset_with_state(player_t* p) {
+  p->reset();
+  // reset() leaves the actor asleep, so buff_t::trigger would otherwise refuse.
+  // Do not call arise()/combat_begin(): those enable unrelated combat effects.
+  p->current.sleeping=false;
+  const auto name=selected_state(p,requested_state);
+  if(name!="none")p->find_action(name)->execute();
+  else if(p->type==DRUID)for(auto* b:p->buff_list)if(b->name_str=="lycaras_teachings_haste")b->trigger();
+  // Shapeshifting may trigger Ursine Vigor and other temporary effects.
+  const std::set<std::string> keep={name,"shadowform_state",
+    "lycaras_teachings_crit","lycaras_teachings_haste","lycaras_teachings_mast","lycaras_teachings_vers"};
+  for(int pass=0;pass<3;++pass)
+    for(auto* b:p->buff_list)if(b->check()&&!keep.count(b->name_str))b->expire();
+  p->cache.invalidate_all();
+}
 std::string trim(std::string s) {
   auto a=s.find_first_not_of(" \t\r\n");
   if(a==s.npos)return {};
@@ -83,6 +134,11 @@ std::string stat_text(const gear_stats_t& stats) {
 std::string pairs_text(const std::vector<stat_pair_t>& pairs) {
   gear_stats_t v;for(auto& p:pairs)v.add_stat(p.stat,p.value);return stat_text(v);
 }
+constexpr std::array<const char*,7> percent_keys={"crit","haste","mastery","versatility","avoidance","leech","speed"};
+std::array<double,7> character_percents(player_t* p){
+  const bool spell=p->primary_role()==ROLE_SPELL||p->primary_role()==ROLE_HEAL;
+  return {100*(spell?p->composite_spell_crit_chance():p->composite_melee_crit_chance()),100*(1/(spell?p->composite_spell_haste():p->composite_melee_haste())-1),100*p->composite_mastery_value(),100*p->composite_damage_versatility(),100*p->composite_avoidance(),100*p->composite_leech(),100*p->composite_run_speed()};
+}
 std::array<double,12> character_values(player_t* p){
   return {p->get_attribute(ATTR_STRENGTH),p->get_attribute(ATTR_AGILITY),p->get_attribute(ATTR_STAMINA),p->get_attribute(ATTR_INTELLECT),p->composite_armor(),p->composite_rating(RATING_MELEE_CRIT),p->composite_rating(RATING_MELEE_HASTE),p->composite_rating(RATING_MASTERY),p->composite_rating(RATING_DAMAGE_VERSATILITY),p->composite_rating(RATING_AVOIDANCE),p->composite_rating(RATING_LEECH),p->composite_rating(RATING_SPEED)};
 }
@@ -93,8 +149,8 @@ std::array<double,12> character_with_probe_gear(player_t* p){
   const auto saved=p->initial.stats;
   for(const auto stat:{STAT_ARMOR,STAT_STRENGTH,STAT_AGILITY,STAT_STAMINA,STAT_INTELLECT,STAT_CRIT_RATING,STAT_HASTE_RATING,STAT_MASTERY_RATING,STAT_VERSATILITY_RATING,STAT_AVOIDANCE_RATING,STAT_LEECH_RATING,STAT_SPEED_RATING})
     p->initial.stats.add_stat(stat,1000);
-  p->reset();const auto values=character_values(p);
-  p->initial.stats=saved;p->reset();
+  reset_with_state(p);const auto values=character_values(p);
+  p->initial.stats=saved;reset_with_state(p);
   return values;
 }
 std::array<double,3> armor_response(player_t* p){
@@ -104,10 +160,10 @@ std::array<double,3> armor_response(player_t* p){
     p->initial.stats=saved;
     if(agility)p->initial.stats.add_stat(STAT_AGILITY,1000);
     if(mastery)p->initial.stats.add_stat(STAT_MASTERY_RATING,1000);
-    p->reset();return character_values(p)[4]-baseline;
+    reset_with_state(p);return character_values(p)[4]-baseline;
   };
   const auto values=std::array<double,3>{probe(true,false),probe(false,true),probe(true,true)};
-  p->initial.stats=saved;p->reset();return values;
+  p->initial.stats=saved;reset_with_state(p);return values;
 }
 constexpr std::array<const char*,12> character_keys={"strength","agility","stamina","intellect","armor","crit_rating","haste_rating","mastery_rating","versatility_rating","avoidance_rating","leech_rating","speed_rating"};
 }
@@ -117,17 +173,19 @@ int main(int argc,char** argv) {
   SetConsoleOutputCP(CP_UTF8);
 #endif
   try {
+    requested_state="none";
     if(argc<2||argc>3){std::cerr<<"Usage: gear-resolver <input.simc|-> [output.txt]\n";return 1;}
     std::string text;
     if(std::string(argv[1])=="-")text.assign(std::istreambuf_iterator<char>(std::cin),{});
     else {std::ifstream f(std::filesystem::u8path(argv[1]),std::ios::binary);if(!f)throw std::runtime_error("Cannot open input");text.assign(std::istreambuf_iterator<char>(f),{});}
     if(text.size()>4*1024*1024)throw std::runtime_error("Input exceeds 4 MiB");
     if(text.compare(0,3,"\xef\xbb\xbf")==0)text.erase(0,3);
-    std::vector<Row> rows;std::string source="equipped",label,name="Character",class_name,race_name="human",spec_name,version,professions,talents;std::set<unsigned> disabled_traits,enabled_traits;bool discover_traits=false;int level=0,expected=0;
+    std::vector<Row> rows;std::string source="equipped",label,name="Character",class_name,race_name="human",spec_name,version,professions,talents;std::set<unsigned> disabled_traits,enabled_traits;bool discover_traits=false,fast_profile=false;int level=0,expected=0;
     std::istringstream input(text);std::string line;
     const std::regex label_pattern("^# (.*) \\(([0-9]+)\\)$");
     while(std::getline(input,line)) {
       line=trim(line);std::smatch match;
+      if(line.rfind("# wgm_state=",0)==0){requested_state=line.substr(12);continue;}
       if(line.rfind("# wgm_disable_traits=",0)==0){
         std::istringstream ids(line.substr(21));std::string token;
         while(std::getline(ids,token,'/'))if(!token.empty()&&token.find_first_not_of("0123456789")==token.npos)disabled_traits.insert(static_cast<unsigned>(std::stoul(token)));
@@ -138,6 +196,7 @@ int main(int argc,char** argv) {
         while(std::getline(ids,token,'/'))if(!token.empty()&&token.find_first_not_of("0123456789")==token.npos)enabled_traits.insert(static_cast<unsigned>(std::stoul(token)));
         continue;
       }
+      if(line=="# wgm_fast_profile=1"){fast_profile=true;continue;}
       if(line=="# wgm_discover_traits=1"){discover_traits=true;continue;}
       if(line.rfind("# WoW ",0)==0)version=line.substr(6);
       if(line.rfind("### ",0)==0){source=line.substr(4);label.clear();expected=0;continue;}
@@ -199,15 +258,19 @@ int main(int argc,char** argv) {
     },"wgm_trait_selection");
     // A naked character has no usable combat action list. This adapter only
     // needs SimC's initialization phases, so keep it active for stat queries.
-    sim.register_actor_initializer(INIT_ACTOR_CREATE_ACTIONS+1,[&](player_t* actor){if(actor==player)actor->quiet=false;},"wgm_stat_only");
+    sim.register_actor_initializer(INIT_ACTOR_CREATE_ACTIONS+1,[&](player_t* actor){if(actor==player){actor->quiet=false;create_state_actions(actor);}},"wgm_stat_only");
     std::istringstream profs(professions);std::string prof;
     while(std::getline(profs,prof,'/')){auto eq=prof.find('=');if(eq==prof.npos)continue;auto p=util::parse_profession_type(prof.substr(0,eq));if(p!=PROFESSION_NONE)player->profession[p]=std::stoi(prof.substr(eq+1));}
     sim.init();
-    player->reset();
+    if(requested_state!="auto"&&!state_available(player,requested_state))throw std::runtime_error("Selected character state is unavailable for this class/spec/talents");
+    reset_with_state(player);
     std::ostringstream out;
     out<<"SimC Gear Resolver 0.1 | SimC "<<SC_VERSION<<"\nData: "<<dbc::client_data_version_str(false)<<"\nSource: ac0f3a3c7ff9e521137c0ca1760d548330c697f3\nCharacter: "<<name<<" | "<<class_name<<"/"<<spec_name<<" | level="<<level<<"\nExport: "<<version<<"\n";
-    out<<"Scope: un-geared character stats with selected permanent talents; item fixed stats. No combat, temporary buffs, set bonuses or proc averages.\n";
+    out<<"Scope: un-geared character stats with selected permanent talents and personal state; item fixed stats. No combat, temporary buffs, set bonuses or proc averages.\n";
     out<<"Context: race="<<race_name<<" | talents="<<talents<<"\n";
+    out<<"State: requested="<<requested_state<<" | active="<<selected_state(player,requested_state)<<" | available=none";
+    for(const auto& state:state_names(player))if(state_available(player,state))out<<"/"<<state;
+    out<<"\n";
     out<<"raw_character: strength="<<player->dbc->race_base(player->race).strength+player->dbc->attribute_base(player->type,level).strength
        <<", agility="<<player->dbc->race_base(player->race).agility+player->dbc->attribute_base(player->type,level).agility
        <<", stamina="<<player->dbc->race_base(player->race).stamina+player->dbc->attribute_base(player->type,level).stamina
@@ -215,6 +278,7 @@ int main(int argc,char** argv) {
     out<<"initial_character: "<<stat_text(player->initial.stats)<<"\n";
     const auto character=character_values(player);
     const auto multipliers=character_multipliers(player);
+    const auto percents=character_percents(player);
     const auto response=parsed_class==DEMON_HUNTER&&parsed_spec==DEMON_HUNTER_VENGEANCE?armor_response(player):std::array<double,3>{};
     const auto character_with_gear=discover_traits?character_with_probe_gear(player):character;
     out<<"character_stats: ";for(size_t i=0;i<character.size();++i)out<<(i?", ":"")<<character_keys[i]<<"="<<character[i];out<<"\n";
@@ -236,6 +300,14 @@ int main(int argc,char** argv) {
       auto* data=trait_data_t::find(std::get<1>(trait),false);
       if(data)out<<"trait: id="<<std::get<1>(trait)<<" | spell="<<data->id_spell<<" | name="<<data->name<<" | rank="<<std::get<2>(trait)<<" | enabled="<<(disabled_traits.count(std::get<1>(trait))?0:1)<<" | origin="<<(enabled_traits.count(std::get<1>(trait))?"manual":"import")<<"\n";
     }
+    for(const auto& entry:all_traits){
+      const auto id=std::get<1>(entry);const auto talent=player->find_talent_spell(id);
+      if(!talent.ok())continue;
+      out<<"trait_kind: id="<<id<<" | passive="<<(talent->flags(spell_attribute::SX_PASSIVE)?1:0)<<"\n";
+      out<<"trait_spell: id="<<id<<" | rank="<<talent.rank();
+      for(unsigned n=1;n<=talent->effect_count();++n)if(talent->effectN(n).ok())out<<" | e"<<n<<"="<<talent->effectN(n).base_value();
+      out<<"\n";
+    }
     // Isolate selected traits with SimC's own initialization. Only changes to
     // the displayed attributes become editable effects in the UI.
     std::set<unsigned> seen_traits;
@@ -247,6 +319,7 @@ int main(int argc,char** argv) {
     }
     for(const auto& trait:candidates){
       const unsigned id=std::get<1>(trait);
+      if(fast_profile)break;
       if(!seen_traits.insert(id).second)continue;
       const bool selected=std::any_of(all_traits.begin(),all_traits.end(),[&](const auto& entry){return std::get<1>(entry)==id;});
       try{
@@ -262,16 +335,20 @@ int main(int argc,char** argv) {
           if(actor!=candidate)return;
           actor->player_traits.erase(std::remove_if(actor->player_traits.begin(),actor->player_traits.end(),[&](const auto& entry){const auto entry_id=std::get<1>(entry);return disabled?(disabled_traits.count(entry_id)>0&&entry_id!=id):(disabled_traits.count(entry_id)>0||(selected&&entry_id==id));}),actor->player_traits.end());
         },"wgm_trial_trait");
-        trial.register_actor_initializer(INIT_ACTOR_CREATE_ACTIONS+1,[&](player_t* actor){if(actor==candidate)actor->quiet=false;},"wgm_trial_active");
-        trial.init();candidate->reset();const auto without=character_values(candidate),without_factors=character_multipliers(candidate);
+        trial.register_actor_initializer(INIT_ACTOR_CREATE_ACTIONS+1,[&](player_t* actor){if(actor==candidate){actor->quiet=false;create_state_actions(actor);}},"wgm_trial_active");
+        trial.init();reset_with_state(candidate);const auto without=character_values(candidate),without_factors=character_multipliers(candidate);
         const auto without_with_gear=discover_traits?character_with_probe_gear(candidate):without;
         const auto trial_response=parsed_class==DEMON_HUNTER&&parsed_spec==DEMON_HUNTER_VENGEANCE?armor_response(candidate):std::array<double,3>{};
         std::ostringstream delta,ratio_text,gear_delta;bool any=false,has_ratio=false,has_gear_delta=false;
         for(size_t i=0;i<character.size();++i){const auto difference=(!selected||disabled)?without[i]-character[i]:character[i]-without[i];if(std::abs(difference)>0.001){if(any)delta<<", ";any=true;delta<<character_keys[i]<<"="<<difference;}}
         for(size_t i=0;i<multipliers.size();++i){const auto with=(!selected||disabled)?without_factors[i]:multipliers[i],without_value=(!selected||disabled)?multipliers[i]:without_factors[i];if(without_value==0)continue;const auto ratio=with/without_value;if(std::abs(ratio-1)>0.00001){if(has_ratio)ratio_text<<", ";has_ratio=true;ratio_text<<character_keys[i]<<"="<<ratio;}}
         for(size_t i=0;i<character_with_gear.size();++i){const auto difference=(!selected||disabled)?without_with_gear[i]-character_with_gear[i]:character_with_gear[i]-without_with_gear[i];if(std::abs(difference)>0.001){if(has_gear_delta)gear_delta<<", ";has_gear_delta=true;gear_delta<<character_keys[i]<<"="<<difference;}}
-        if(any||has_ratio||has_gear_delta){
+        const auto trial_percents=character_percents(candidate);
+        std::ostringstream percent_delta;bool has_percent=false;
+        for(size_t i=0;i<percents.size();++i){const auto d=(!selected||disabled)?trial_percents[i]-percents[i]:percents[i]-trial_percents[i];if(std::abs(d)>0.00001){if(has_percent)percent_delta<<", ";has_percent=true;percent_delta<<percent_keys[i]<<"="<<d;}}
+        if(any||has_ratio||has_gear_delta||has_percent){
           if(!selected){const auto* data=trait_data_t::find(id,false);out<<"trait: id="<<id<<" | spell="<<data->id_spell<<" | name="<<data->name<<" | rank="<<data->max_ranks<<" | enabled=0 | origin=available\n";}
+          if(has_percent)out<<"trait_percent: id="<<id<<" | stats: "<<percent_delta.str()<<"\n";
           if(any)out<<"trait_effect: id="<<id<<" | stats: "<<delta.str()<<"\n";
           if(has_ratio)out<<"trait_multiplier: id="<<id<<" | stats: "<<ratio_text.str()<<"\n";
           if(has_gear_delta)out<<"trait_probe: id="<<id<<" | stats: "<<gear_delta.str()<<"\n";
@@ -283,6 +360,7 @@ int main(int argc,char** argv) {
           }
           const auto talent=(!selected||disabled)?candidate->find_talent_spell(id):player->find_talent_spell(id);
           if(talent.ok()){
+            out<<"trait_kind: id="<<id<<" | passive="<<(talent->flags(spell_attribute::SX_PASSIVE)?1:0)<<"\n";
             out<<"trait_spell: id="<<id<<" | rank="<<talent.rank();
             for(unsigned n=1;n<=talent->effect_count();++n){const auto& effect=talent->effectN(n);if(effect.ok())out<<" | e"<<n<<"="<<effect.base_value();}
             out<<"\n";

@@ -1,4 +1,4 @@
-// Rating contribution from the bundled SimulationCraft 12.1.0.69814 tables.
+// Rating contribution from the bundled SimulationCraft 12.1.5.70575 tables.
 (function(root){
 'use strict';
 const data=typeof module!=='undefined'?require('./rating-data.js'):root.RatingData;

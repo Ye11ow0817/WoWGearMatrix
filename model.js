@@ -149,6 +149,12 @@
     text=text.replace(/^# wgm_(?:state|disable_traits|enable_traits|discover_traits|fast_profile)=.*$/gm,'');
     return text+'\n# wgm_state='+(profile.characterState??'none')+'\n# wgm_disable_traits='+profile.disabledTraits.join('/')+'\n# wgm_enable_traits='+(profile.enabledTraits||[]).join('/')+(profile.fast?'\n# wgm_fast_profile=1\n':'\n# wgm_discover_traits=1\n');
   }
+  let importedItemNames;
+  function importedItemName(itemId,simcName,databaseName){
+    if(importedItemNames===undefined)importedItemNames=typeof module!=='undefined'?require('./data/item-names.json').byId:{};
+    const chinese=importedItemNames[String(itemId)];
+    return typeof chinese==='string'&&/[\u3400-\u9fff]/.test(chinese)?chinese:(simcName||'').trim()||databaseName;
+  }
   function parseReport(report,fastProfile=false) {
     const character = report.match(/^Character: (.*?) \| (.*?)\/(.*?) \| level=(\d+)/m);
     const cls=({deathknight:'death_knight',demonhunter:'demon_hunter'})[character?.[2]]||character?.[2], spec=character?.[3];
@@ -189,7 +195,7 @@
       if (!info || !base || !flags || /^ERROR:/m.test(block)) { result.failed++; continue; }
       const raw = Object.fromEntries([...base[1].matchAll(/(\w+)=(-?[\d.]+)/g)].map(m => [m[1],Number(m[2])]));
       const primary = mainType;
-      result.items.push({id:id(),itemId:Number(info[1]),name:header[3].trim() || info[2],ilevel:Number(info[3]),slot,position:header[1] === 'equipped' ? Number(header[2].match(/[12]$/)?.[0] || 1) : 0,origin:'import',source:header[1],mainType:primary,weaponType:block.match(/^weapon: (\w+)/m)?.[1]||'none',stats:{armor:(raw.armor||0)+(raw.bonus_armor||0),stamina:raw.stamina||0,avoidance:raw.avoidance_rating||0,leech:raw.leech_rating||0,speed:raw.speed_rating||0,main:raw[primary]||0,crit:raw.crit_rating||0,haste:raw.haste_rating||0,mastery:raw.mastery_rating||0,versatility:raw.versatility_rating||0},socket:Number(flags[1])>0,socketCount:Number(flags[1]),set:tierSlots.includes(slot)&&Number(flags[2])>0,setId:tierSlots.includes(slot)?Number(flags[2]):0,embellishment:flags[3]==='1'});
+      result.items.push({id:id(),itemId:Number(info[1]),name:importedItemName(Number(info[1]),header[3],info[2]),ilevel:Number(info[3]),slot,position:header[1] === 'equipped' ? Number(header[2].match(/[12]$/)?.[0] || 1) : 0,origin:'import',source:header[1],mainType:primary,weaponType:block.match(/^weapon: (\w+)/m)?.[1]||'none',stats:{armor:(raw.armor||0)+(raw.bonus_armor||0),stamina:raw.stamina||0,avoidance:raw.avoidance_rating||0,leech:raw.leech_rating||0,speed:raw.speed_rating||0,main:raw[primary]||0,crit:raw.crit_rating||0,haste:raw.haste_rating||0,mastery:raw.mastery_rating||0,versatility:raw.versatility_rating||0},socket:Number(flags[1])>0,socketCount:Number(flags[1]),set:tierSlots.includes(slot)&&Number(flags[2])>0,setId:tierSlots.includes(slot)?Number(flags[2]):0,embellishment:flags[3]==='1'});
     }
     result.mainType = mainType;
     result.warnings = report.split('\n').filter(s => /WARNING|ERROR/.test(s));

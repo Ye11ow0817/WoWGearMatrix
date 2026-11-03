@@ -1,13 +1,18 @@
 {
   "engine": "SimC Gear Resolver 0.1",
-  "simcCommit": "ac0f3a3c7ff9e521137c0ca1760d548330c697f3",
-  "gameData": "12.1.0.69814",
+  "simcCommit": "426ad85ecb1c5d9a1af166931478dabf29b42fdd",
+  "simcBranch": "midnight",
+  "simcCommittedAt": "2026-10-26T22:18:12Z",
+  "gameData": "12.1.5.70575",
+  "hotfixDate": "2026-10-24",
+  "hotfixHash": "8cab0998702efa9307968e82a26aba0824ac9cf7199122ca5a4fa9143390cb69",
   "runtime": "Node.js + WebAssembly",
+  "compiler": "Emscripten 3.1.8-git; C++17; O1; no networking, threading or PTR",
   "sha256": {
-    "gear-resolver.wasm": "ca55ff7d48954c35c6ca7f94081c530827b841e219a247caa864c674c8faee99",
+    "gear-resolver.wasm": "6264f55b0ee0bf3b61ca812131da00e33d824f12f8e7dde3f67b5f39346eefce",
     "gear-resolver.js": "a022a39a0cd8d35ec8da8be15560ecc51bc68b483930fd7e242836bf789ab8f9",
-    "gear_resolver.cpp": "630c36d7343d2238b800e2e038b49cfd090b6df90da398cc9c6f6af0a4afe93e",
-    "simc-source.zip": "4e4eb957c089ad1ba6f8b81dfca32f8af912ac126a8269898ee2b1710cbf3ef1"
+    "gear_resolver.cpp": "5e776fed7efde0cb4c716d88ee92bad376ebad29ec1423cc1a183eca6d9c5342",
+    "simc-source.zip": "0c23913a1baaebdf3a4f4bc62894f21ce89008ccdd85eb186777f695aab36686"
   },
-  "adapterRevision": "0.3.3 - personal states and percentages; fast profile initialization without repeated trait isolation; raw spell descriptions and passive flags; raid buffs and temporary triggers excluded; embellishment category 512"
+  "adapterRevision": "2026-10-27 - SimC midnight refresh; mastery reference export; original SimC name tokens; independent JSON Chinese item names"
 }

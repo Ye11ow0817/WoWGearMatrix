@@ -1,9 +1,259 @@
 SimC Gear Resolver 0.1 | SimC 1210-01
-Data: 12.1.0.69814
-Source: ac0f3a3c7ff9e521137c0ca1760d548330c697f3
+Data: 12.1.5.70575
+Source: 426ad85ecb1c5d9a1af166931478dabf29b42fdd
 Character: Yellowwar | warrior/arms | level=90
 Export: 12.1.0.69814, TOC 120100
-Scope: item base stats + fixed gem/enchant stats. No combat, talents, set bonuses or proc averages.
+Scope: un-geared character stats with selected permanent talents and personal state; item fixed stats. No combat, temporary buffs, set bonuses or proc averages.
+Context: race=night_elf | talents=CcEASWsDSHNyPDXnbxuIhH3ZdDzMzsMz8AmZGAAAghphZGzMWmZmZGmxMDAAAAgZWmZgJMWWGYBMgZYCZGsBmZYsNwyMbDwMDAMMA
+mastery_reference: spell=1258398 | name=Mastery: Master of Arms | coefficient=1.1
+State: requested=none | active=none | available=none/battle_stance/defensive_stance
+raw_character: strength=618, agility=430, stamina=4600, intellect=422
+initial_character: strength=618, agility=430, stamina=4600, intellect=422
+character_stats: strength=618, agility=430, stamina=5060, intellect=422, armor=0, crit_rating=0, haste_rating=0, mastery_rating=0, versatility_rating=0, avoidance_rating=0, leech_rating=0, speed_rating=0
+character_percent: crit=7, haste=3.02, mastery=8.8, versatility=0, avoidance=0, leech=3, speed=0
+character_factors: strength=1, agility=1, stamina=1.1, intellect=1, armor=1.21, crit_rating=1, haste_rating=1, mastery_rating=1, versatility_rating=1, avoidance_rating=1, leech_rating=1, speed_rating=1
+trait: id=112121 | spell=118038 | name=Die by the Sword | rank=1 | enabled=1 | origin=import
+trait: id=112122 | spell=12294 | name=Mortal Strike | rank=1 | enabled=1 | origin=import
+trait: id=112123 | spell=7384 | name=Overpower | rank=1 | enabled=1 | origin=import
+trait: id=112125 | spell=316405 | name=Improved Execute | rank=1 | enabled=1 | origin=import
+trait: id=112126 | spell=29725 | name=Sudden Death | rank=1 | enabled=1 | origin=import
+trait: id=112128 | spell=383103 | name=Fueled by Violence | rank=1 | enabled=1 | origin=import
+trait: id=112129 | spell=384361 | name=Bloodsurge | rank=1 | enabled=1 | origin=import
+trait: id=112131 | spell=385571 | name=Improved Overpower | rank=1 | enabled=1 | origin=import
+trait: id=112134 | spell=184783 | name=Tactician | rank=1 | enabled=1 | origin=import
+trait: id=112135 | spell=383287 | name=Bloodborne | rank=1 | enabled=1 | origin=import
+trait: id=112144 | spell=167105 | name=Colossus Smash | rank=1 | enabled=1 | origin=import
+trait: id=112145 | spell=281001 | name=Massacre | rank=1 | enabled=1 | origin=import
+trait: id=112146 | spell=383430 | name=Impale | rank=1 | enabled=1 | origin=import
+trait: id=112147 | spell=845 | name=Cleave | rank=1 | enabled=1 | origin=import
+trait: id=112179 | spell=382896 | name=Two-Handed Weapon Specialization | rank=2 | enabled=1 | origin=import
+trait: id=112183 | spell=202168 | name=Impending Victory | rank=1 | enabled=1 | origin=import
+trait: id=112184 | spell=386164 | name=Battle Stance | rank=1 | enabled=1 | origin=import
+trait: id=112185 | spell=262231 | name=War Machine | rank=1 | enabled=1 | origin=import
+trait: id=112188 | spell=97462 | name=Rallying Cry | rank=1 | enabled=1 | origin=import
+trait: id=112190 | spell=29838 | name=Second Wind | rank=1 | enabled=1 | origin=import
+trait: id=112198 | spell=107570 | name=Storm Bolt | rank=1 | enabled=1 | origin=import
+trait: id=112206 | spell=382260 | name=Fast Footwork | rank=1 | enabled=1 | origin=import
+trait: id=112208 | spell=6544 | name=Heroic Leap | rank=1 | enabled=1 | origin=import
+trait: id=112209 | spell=383082 | name=Barbaric Training | rank=1 | enabled=1 | origin=import
+trait: id=112215 | spell=384110 | name=Wrecking Throw | rank=1 | enabled=1 | origin=import
+trait: id=112216 | spell=392792 | name=Frothing Berserker | rank=1 | enabled=1 | origin=import
+trait: id=112217 | spell=382549 | name=Pain and Gain | rank=1 | enabled=1 | origin=import
+trait: id=112219 | spell=202163 | name=Bounding Stride | rank=1 | enabled=1 | origin=import
+trait: id=112224 | spell=382946 | name=Wild Strikes | rank=2 | enabled=1 | origin=import
+trait: id=112233 | spell=384124 | name=Armored to the Teeth | rank=2 | enabled=1 | origin=import
+trait: id=112235 | spell=382939 | name=Reinforced Plates | rank=2 | enabled=1 | origin=import
+trait: id=112238 | spell=382258 | name=Leeching Strikes | rank=1 | enabled=1 | origin=import
+trait: id=112242 | spell=46968 | name=Shockwave | rank=1 | enabled=1 | origin=import
+trait: id=112245 | spell=382767 | name=Overwhelming Rage | rank=1 | enabled=1 | origin=import
+trait: id=112248 | spell=392777 | name=Cruel Strikes | rank=2 | enabled=1 | origin=import
+trait: id=112249 | spell=103827 | name=Double Time | rank=1 | enabled=1 | origin=import
+trait: id=112253 | spell=23920 | name=Spell Reflection | rank=1 | enabled=1 | origin=import
+trait: id=112310 | spell=383154 | name=Bloodletting | rank=1 | enabled=1 | origin=import
+trait: id=112311 | spell=383703 | name=Fatality | rank=1 | enabled=1 | origin=import
+trait: id=112314 | spell=227847 | name=Bladestorm | rank=1 | enabled=1 | origin=import
+trait: id=112317 | spell=389306 | name=Critical Thinking | rank=2 | enabled=1 | origin=import
+trait: id=112318 | spell=386634 | name=Executioner's Precision | rank=1 | enabled=1 | origin=import
+trait: id=112320 | spell=383341 | name=Sharpened Blades | rank=2 | enabled=1 | origin=import
+trait: id=114739 | spell=1261050 | name=Powerful Momentum | rank=1 | enabled=1 | origin=import
+trait: id=114643 | spell=386208 | name=Defensive Stance | rank=1 | enabled=1 | origin=import
+trait: id=117381 | spell=444771 | name=Show No Mercy | rank=1 | enabled=1 | origin=import
+trait: id=117383 | spell=444778 | name=Culling Cyclone | rank=1 | enabled=1 | origin=import
+trait: id=117384 | spell=444773 | name=Fierce Followthrough | rank=1 | enabled=1 | origin=import
+trait: id=117385 | spell=444769 | name=Imminent Demise | rank=1 | enabled=1 | origin=import
+trait: id=117392 | spell=444776 | name=Relentless Pursuit | rank=1 | enabled=1 | origin=import
+trait: id=117398 | spell=444779 | name=Slayer's Malice | rank=1 | enabled=1 | origin=import
+trait: id=117406 | spell=444775 | name=Reap the Storm | rank=1 | enabled=1 | origin=import
+trait: id=117407 | spell=444772 | name=Overwhelming Blades | rank=1 | enabled=1 | origin=import
+trait: id=117410 | spell=444770 | name=Death Drive | rank=1 | enabled=1 | origin=import
+trait: id=117411 | spell=444767 | name=Slayer's Dominance | rank=1 | enabled=1 | origin=import
+trait: id=117415 | spell=436358 | name=Demolish | rank=1 | enabled=1 | origin=import
+trait: id=117417 | spell=444780 | name=Unrelenting Onslaught | rank=1 | enabled=1 | origin=import
+trait: id=118850 | spell=391271 | name=Honed Reflexes | rank=1 | enabled=1 | origin=import
+trait: id=123390 | spell=0 | name=0 | rank=1 | enabled=1 | origin=import
+trait: id=134031 | spell=1280961 | name=Stance Mastery | rank=1 | enabled=1 | origin=import
+trait: id=134032 | spell=152278 | name=Anger Management | rank=1 | enabled=1 | origin=import
+trait: id=134033 | spell=424742 | name=Battlefield Commander | rank=1 | enabled=1 | origin=import
+trait: id=134225 | spell=1243660 | name=Resonant Voice | rank=1 | enabled=1 | origin=import
+trait: id=136627 | spell=12323 | name=Piercing Howl | rank=1 | enabled=1 | origin=import
+trait: id=135597 | spell=772 | name=Rend | rank=1 | enabled=1 | origin=import
+trait: id=135939 | spell=1261051 | name=Tactical Edge | rank=1 | enabled=1 | origin=import
+trait: id=135940 | spell=1261060 | name=Deep Wounds | rank=1 | enabled=1 | origin=import
+trait: id=135941 | spell=1261062 | name=Mortal Wounds | rank=1 | enabled=1 | origin=import
+trait: id=135942 | spell=1261049 | name=Broad Strokes | rank=1 | enabled=1 | origin=import
+trait: id=135944 | spell=400803 | name=Strength of Arms | rank=2 | enabled=1 | origin=import
+trait: id=136074 | spell=386628 | name=Unhinged | rank=1 | enabled=1 | origin=import
+trait: id=136075 | spell=1270718 | name=Deadly Focus | rank=1 | enabled=1 | origin=import
+trait: id=136076 | spell=1270717 | name=Violent Euphoria | rank=1 | enabled=1 | origin=import
+trait: id=136703 | spell=107574 | name=Avatar | rank=1 | enabled=1 | origin=import
+trait: id=136989 | spell=1269314 | name=Master of Warfare | rank=1 | enabled=1 | origin=import
+trait: id=136988 | spell=1269306 | name=Master of Warfare | rank=2 | enabled=1 | origin=import
+trait: id=136987 | spell=1269307 | name=Master of Warfare | rank=1 | enabled=1 | origin=import
+trait_kind: id=112121 | passive=0
+trait_spell: id=112121 | rank=1 | e1=100 | e2=-30 | e3=0
+trait_kind: id=112122 | passive=0
+trait_spell: id=112122 | rank=1 | e1=0
+trait_kind: id=112123 | passive=0
+trait_spell: id=112123 | rank=1 | e1=0
+trait_kind: id=112125 | passive=1
+trait_spell: id=112125 | rank=1 | e1=-100 | e2=0
+trait_kind: id=112126 | passive=1
+trait_spell: id=112126 | rank=1 | e1=40
+trait_kind: id=112128 | passive=1
+trait_spell: id=112128 | rank=1 | e1=85
+trait_kind: id=112129 | passive=1
+trait_spell: id=112129 | rank=1 | e1=30
+trait_kind: id=112131 | passive=1
+trait_spell: id=112131 | rank=1 | e1=15 | e2=1
+trait_kind: id=112134 | passive=1
+trait_spell: id=112134 | rank=1 | e1=30
+trait_kind: id=112135 | passive=1
+trait_spell: id=112135 | rank=1 | e1=5 | e2=5
+trait_kind: id=112144 | passive=0
+trait_spell: id=112144 | rank=1 | e1=0 | e2=0 | e3=8
+trait_kind: id=112145 | passive=1
+trait_spell: id=112145 | rank=1 | e1=281000 | e2=35 | e3=330334
+trait_kind: id=112146 | passive=1
+trait_spell: id=112146 | rank=1 | e1=10 | e2=100
+trait_kind: id=112147 | passive=0
+trait_spell: id=112147 | rank=1 | e1=0 | e2=5
+trait_kind: id=112179 | passive=1
+trait_spell: id=112179 | rank=2 | e1=6 | e2=6 | e3=6 | e4=-4
+trait_kind: id=112183 | passive=0
+trait_spell: id=112183 | rank=1 | e1=0
+trait_kind: id=112184 | passive=0
+trait_spell: id=112184 | rank=1 | e1=3 | e2=-10 | e3=-10 | e4=3
+trait_kind: id=112185 | passive=1
+trait_spell: id=112185 | rank=1 | e1=0 | e2=10 | e3=20 | e4=50
+trait_kind: id=112188 | passive=0
+trait_spell: id=112188 | rank=1 | e1=12 | e2=50
+trait_kind: id=112190 | passive=1
+trait_spell: id=112190 | rank=1 | e1=5000
+trait_kind: id=112198 | passive=0
+trait_spell: id=112198 | rank=1 | e1=0 | e2=0
+trait_kind: id=112206 | passive=1
+trait_spell: id=112206 | rank=1 | e1=5
+trait_kind: id=112208 | passive=0
+trait_spell: id=112208 | rank=1 | e1=0 | e2=5
+trait_kind: id=112209 | passive=1
+trait_spell: id=112209 | rank=1 | e1=10 | e2=5 | e3=0 | e4=0 | e5=10 | e6=5 | e7=10 | e8=5
+trait_kind: id=112215 | passive=0
+trait_spell: id=112215 | rank=1 | e1=0
+trait_kind: id=112216 | passive=1
+trait_spell: id=112216 | rank=1 | e1=10 | e2=10 | e3=50
+trait_kind: id=112217 | passive=1
+trait_spell: id=112217 | rank=1 | e1=0
+trait_kind: id=112219 | passive=1
+trait_spell: id=112219 | rank=1 | e1=-15000 | e2=-15000
+trait_kind: id=112224 | passive=1
+trait_spell: id=112224 | rank=2 | e1=2 | e2=20
+trait_kind: id=112233 | passive=1
+trait_spell: id=112233 | rank=2 | e1=0 | e2=10 | e3=4
+trait_kind: id=112235 | passive=1
+trait_spell: id=112235 | rank=2 | e1=10 | e2=10
+trait_kind: id=112238 | passive=1
+trait_spell: id=112238 | rank=1 | e1=3
+trait_kind: id=112242 | passive=0
+trait_spell: id=112242 | rank=1 | e1=0 | e2=0
+trait_kind: id=112245 | passive=1
+trait_spell: id=112245 | rank=1 | e1=300
+trait_kind: id=112248 | passive=1
+trait_spell: id=112248 | rank=2 | e1=2 | e2=10
+trait_kind: id=112249 | passive=1
+trait_spell: id=112249 | rank=1 | e1=1 | e2=-3000
+trait_kind: id=112253 | passive=0
+trait_spell: id=112253 | rank=1 | e1=100 | e2=0
+trait_kind: id=112310 | passive=1
+trait_spell: id=112310 | rank=1 | e1=33 | e2=5 | e3=35
+trait_kind: id=112311 | passive=1
+trait_spell: id=112311 | rank=1 | e1=50
+trait_kind: id=112314 | passive=0
+trait_spell: id=112314 | rank=1 | e1=8 | e2=0 | e3=0
+trait_kind: id=112317 | passive=1
+trait_spell: id=112317 | rank=2 | e1=10 | e2=20
+trait_kind: id=112318 | passive=1
+trait_spell: id=112318 | rank=1 | e1=0
+trait_kind: id=112320 | passive=1
+trait_spell: id=112320 | rank=2 | e1=10 | e2=10
+trait_kind: id=114739 | passive=1
+trait_spell: id=114739 | rank=1 | e1=20
+trait_kind: id=114643 | passive=0
+trait_spell: id=114643 | rank=1 | e1=-15 | e2=-10 | e3=0 | e4=0 | e5=20 | e6=15
+trait_kind: id=117381 | passive=1
+trait_spell: id=117381 | rank=1 | e1=0
+trait_kind: id=117383 | passive=1
+trait_spell: id=117383 | rank=1 | e1=20
+trait_kind: id=117384 | passive=1
+trait_spell: id=117384 | rank=1 | e1=0
+trait_kind: id=117385 | passive=1
+trait_spell: id=117385 | rank=1 | e1=3 | e2=100 | e3=100
+trait_kind: id=117392 | passive=1
+trait_spell: id=117392 | rank=1 | e1=0
+trait_kind: id=117398 | passive=1
+trait_spell: id=117398 | rank=1 | e1=15 | e2=15
+trait_kind: id=117406 | passive=1
+trait_spell: id=117406 | rank=1 | e1=8 | e2=3 | e3=20 | e4=20
+trait_kind: id=117407 | passive=1
+trait_spell: id=117407 | rank=1 | e1=0
+trait_kind: id=117410 | passive=1
+trait_spell: id=117410 | rank=1 | e1=15
+trait_kind: id=117411 | passive=1
+trait_spell: id=117411 | rank=1 | e1=15 | e2=25
+trait_kind: id=117417 | passive=1
+trait_spell: id=117417 | rank=1 | e1=5 | e2=1 | e3=446035 | e4=20
+trait_kind: id=118850 | passive=1
+trait_spell: id=118850 | rank=1 | e1=-10 | e2=-10 | e3=-10 | e4=-10 | e5=0
+trait_kind: id=134031 | passive=1
+trait_spell: id=134031 | rank=1 | e1=0
+trait_kind: id=134032 | passive=1
+trait_spell: id=134032 | rank=1 | e1=20 | e2=20 | e3=20
+trait_kind: id=134033 | passive=1
+trait_spell: id=134033 | rank=1 | e1=100 | e2=-15000 | e3=100 | e4=2 | e5=3000 | e6=3
+trait_kind: id=134225 | passive=1
+trait_spell: id=134225 | rank=1 | e1=20
+trait_kind: id=136627 | passive=0
+trait_spell: id=136627 | rank=1 | e1=-70 | e2=0
+trait_kind: id=135597 | passive=0
+trait_spell: id=135597 | rank=1 | e1=0
+trait_kind: id=135939 | passive=1
+trait_spell: id=135939 | rank=1 | e1=1
+trait_kind: id=135940 | passive=1
+trait_spell: id=135940 | rank=1 | e1=0
+trait_kind: id=135941 | passive=1
+trait_spell: id=135941 | rank=1 | e1=100
+trait_kind: id=135942 | passive=1
+trait_spell: id=135942 | rank=1 | e1=6
+trait_kind: id=135944 | passive=1
+trait_spell: id=135944 | rank=2 | e1=10 | e2=10 | e3=10
+trait_kind: id=136074 | passive=1
+trait_spell: id=136074 | rank=1 | e1=2 | e2=100
+trait_kind: id=136075 | passive=1
+trait_spell: id=136075 | rank=1 | e1=6000
+trait_kind: id=136076 | passive=1
+trait_spell: id=136076 | rank=1 | e1=0
+trait_kind: id=136703 | passive=0
+trait_spell: id=136703 | rank=1 | e1=20 | e2=0 | e3=20 | e4=20 | e5=30 | e6=-5 | e7=5 | e8=-3 | e9=50 | e10=-50
+trait_kind: id=136989 | passive=1
+trait_spell: id=136989 | rank=1 | e1=0
+trait_kind: id=136988 | passive=1
+trait_spell: id=136988 | rank=2 | e1=5 | e2=5
+trait_kind: id=136987 | passive=1
+trait_spell: id=136987 | rank=1 | e1=0
+trait_percent: id=112224 | stats: haste=2.02
+trait_kind: id=112224 | passive=1
+trait_spell: id=112224 | rank=2 | e1=2 | e2=20
+trait_effect: id=112235 | stats: stamina=460
+trait_multiplier: id=112235 | stats: stamina=1.1, armor=1.21
+trait_probe: id=112235 | stats: stamina=460
+trait_kind: id=112235 | passive=1
+trait_spell: id=112235 | rank=2 | e1=10 | e2=10
+trait_percent: id=112238 | stats: leech=3
+trait_kind: id=112238 | passive=1
+trait_spell: id=112238 | rank=1 | e1=3
+trait_percent: id=112248 | stats: crit=2
+trait_kind: id=112248 | passive=1
+trait_spell: id=112248 | rank=2 | e1=2 | e2=10
+WARNING: export version differs from bundled data; compatibility has not been verified.
 
 [1] equipped / head / 翡翠督军的淬火战角
 id=271456 | Tempered Horns of the Jade Warlord | ilevel=321
@@ -12,6 +262,8 @@ gems: (none)
 enchant: avoidance_rating=37
 socket_bonus: (none)
 total_for_spec: strength=167, stamina=3369, crit_rating=58, haste_rating=133, avoidance_rating=37, armor=299
+base_for_spec: strength=167, stamina=3369, crit_rating=58, haste_rating=133, armor=299
+gear_flags: sockets=0, set_id=2067, embellishment=0
 
 [2] equipped / neck / 冲锋巨熊项圈
 id=251173 | Yoke of the Charging Bear | ilevel=311
@@ -20,6 +272,8 @@ gems: stragiint=32
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=32, stamina=1689, crit_rating=121, haste_rating=232, speed_rating=61
+base_for_spec: stamina=1689, crit_rating=121, haste_rating=232, speed_rating=61
+gear_flags: sockets=1, set_id=0, embellishment=0
 
 [3] equipped / shoulder / 翡翠督军的狂怒肩铠
 id=271454 | Raging Pauldrons of the Jade Warlord | ilevel=321
@@ -28,6 +282,8 @@ gems: (none)
 enchant: avoidance_rating=111
 socket_bonus: (none)
 total_for_spec: strength=125, stamina=2527, crit_rating=47, haste_rating=96, avoidance_rating=111, armor=274
+base_for_spec: strength=125, stamina=2527, crit_rating=47, haste_rating=96, armor=274
+gear_flags: sockets=0, set_id=2067, embellishment=0
 
 [4] equipped / back / 丝质巫毒斗篷
 id=268253 | Silken Voodoo Drape | ilevel=334
@@ -36,6 +292,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=106, stamina=2199, haste_rating=33, mastery_rating=80, armor=78
+base_for_spec: strength=106, stamina=2199, haste_rating=33, mastery_rating=80, armor=78
+gear_flags: sockets=0, set_id=0, embellishment=0
 
 [5] equipped / chest / 翡翠督军胸铠
 id=271459 | Cuirass of the Jade Warlord | ilevel=311
@@ -44,6 +302,8 @@ gems: (none)
 enchant: stragiint=50
 socket_bonus: (none)
 total_for_spec: strength=202, stamina=3002, crit_rating=72, mastery_rating=111, armor=373
+base_for_spec: strength=152, stamina=3002, crit_rating=72, mastery_rating=111, armor=373
+gear_flags: sockets=0, set_id=2067, embellishment=0
 
 [6] equipped / shirt / 闪闪的项圈
 id=268274 | Blinky's Collar | ilevel=1
@@ -52,6 +312,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: (none)
+base_for_spec: (none)
+gear_flags: sockets=0, set_id=0, embellishment=0
 effect: spell_id=1282029 trigger=1 (not included in fixed stats)
 
 [7] equipped / wrist / 破法者的护腕
@@ -61,6 +323,8 @@ gems: crit_rating=7, haste_rating=16
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=103, stamina=2124, crit_rating=63, haste_rating=72, armor=213
+base_for_spec: strength=103, stamina=2124, crit_rating=56, haste_rating=56, armor=213
+gear_flags: sockets=1, set_id=0, embellishment=1
 effect: spell_id=1283697 trigger=1 (not included in fixed stats)
 
 [8] equipped / hands / 翡翠督军的镶玉护手
@@ -70,6 +334,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=125, stamina=2527, crit_rating=56, haste_rating=87, armor=224
+base_for_spec: strength=125, stamina=2527, crit_rating=56, haste_rating=87, armor=224
+gear_flags: sockets=0, set_id=2067, embellishment=0
 
 [9] equipped / waist / 致命净化束腰
 id=159418 | Girdle of Pestilent Purification | ilevel=311
@@ -78,6 +344,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=114, stamina=2252, haste_rating=86, mastery_rating=51, armor=210
+base_for_spec: strength=114, stamina=2252, haste_rating=86, mastery_rating=51, armor=210
+gear_flags: sockets=0, set_id=0, embellishment=0
 
 [10] equipped / legs / 磐石马裤
 id=251182 | Bedrock Breeches | ilevel=311
@@ -86,6 +354,8 @@ gems: (none)
 enchant: stragi=41, bonus_armor=27
 socket_bonus: (none)
 total_for_spec: strength=193, stamina=3002, crit_rating=111, versatility_rating=72, armor=326, bonus_armor=27
+base_for_spec: strength=152, stamina=3002, crit_rating=111, versatility_rating=72, armor=326
+gear_flags: sockets=0, set_id=0, embellishment=0
 
 [11] equipped / feet / 金泥践踏者
 id=159412 | Auric Puddle Stompers | ilevel=311
@@ -94,6 +364,8 @@ gems: (none)
 enchant: stamina=232, avoidance_rating=19
 socket_bonus: (none)
 total_for_spec: strength=114, stamina=2484, crit_rating=57, versatility_rating=80, avoidance_rating=19, armor=233
+base_for_spec: strength=114, stamina=2252, crit_rating=57, versatility_rating=80, armor=233
+gear_flags: sockets=0, set_id=0, embellishment=0
 
 [12] equipped / finger1 / 翠玉盘蛇指环
 id=162544 | Jade Ophidian Band | ilevel=321
@@ -102,6 +374,8 @@ gems: crit_rating=7, haste_rating=16
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: stamina=1895, crit_rating=7, haste_rating=16, mastery_rating=236, versatility_rating=140
+base_for_spec: stamina=1895, mastery_rating=236, versatility_rating=140
+gear_flags: sockets=1, set_id=0, embellishment=0
 passive gem/enchant effect: eyes_of_the_eagle spell_id=1236701 (not added to rating totals)
   critical_damage_bonus=2%
   critical_healing_bonus=2%
@@ -113,6 +387,8 @@ gems: crit_rating=7, haste_rating=16
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: stamina=1895, crit_rating=222, haste_rating=16, mastery_rating=161
+base_for_spec: stamina=1895, crit_rating=215, mastery_rating=161
+gear_flags: sockets=1, set_id=0, embellishment=0
 passive gem/enchant effect: eyes_of_the_eagle spell_id=1236701 (not added to rating totals)
   critical_damage_bonus=2%
   critical_healing_bonus=2%
@@ -124,6 +400,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=179
+base_for_spec: strength=179
+gear_flags: sockets=0, set_id=2070, embellishment=0
 effect: spell_id=1291728 trigger=1 (not included in fixed stats)
 
 [15] equipped / trinket2 / 一瓶肮脏的烈性毒液
@@ -133,6 +411,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=159
+base_for_spec: strength=159
+gear_flags: sockets=0, set_id=0, embellishment=0
 effect: spell_id=1293316 trigger=0 (not included in fixed stats)
 effect: spell_id=1295179 trigger=1 (not included in fixed stats)
 
@@ -143,6 +423,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=183, stamina=3777, crit_rating=99, haste_rating=99
+base_for_spec: strength=183, stamina=3777, crit_rating=99, haste_rating=99
+gear_flags: sockets=0, set_id=0, embellishment=1
 weapon: sword2h_3.60speed_372min_621max
 effect: spell_id=1297382 trigger=1 (not included in fixed stats)
 passive gem/enchant effect: rite_of_the_hashey spell_id=1297652 (not added to rating totals)
@@ -155,6 +437,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=152, stamina=3002, crit_rating=118, mastery_rating=64, armor=280
+base_for_spec: strength=152, stamina=3002, crit_rating=118, mastery_rating=64, armor=280
+gear_flags: sockets=0, set_id=0, embellishment=0
 
 [18] Gear from Bags / neck / 护卫之牙束带
 id=273781 | Strand of Warding Fangs | ilevel=311
@@ -163,6 +447,8 @@ gems: stragiint=32
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=32, stamina=1689, crit_rating=201, haste_rating=152
+base_for_spec: stamina=1689, crit_rating=201, haste_rating=152
+gear_flags: sockets=1, set_id=0, embellishment=0
 
 [19] Gear from Bags / back / 防火斗披
 id=193763 | Fireproof Drape | ilevel=321
@@ -171,6 +457,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=94, stamina=1895, crit_rating=40, haste_rating=67, armor=72
+base_for_spec: strength=94, stamina=1895, crit_rating=40, haste_rating=67, armor=72
+gear_flags: sockets=0, set_id=0, embellishment=0
 
 [20] Gear from Bags / waist / 钢皮束带
 id=257017 | Steelbark Girdle | ilevel=279
@@ -179,6 +467,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=85, stamina=1545, haste_rating=66, versatility_rating=51, armor=173
+base_for_spec: strength=85, stamina=1545, haste_rating=66, versatility_rating=51, armor=173
+gear_flags: sockets=0, set_id=0, embellishment=0
 
 [21] Gear from Bags / feet / 邪能浸透之靴
 id=251125 | Felsoaked Soles | ilevel=298
@@ -187,6 +477,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: stamina=1935, crit_rating=45, versatility_rating=84, armor=143
+base_for_spec: stamina=1935, crit_rating=45, versatility_rating=84, armor=143
+gear_flags: sockets=0, set_id=0, embellishment=0
 
 [22] Gear from Bags / trinket1 / 原始点金石
 id=241291 | Primal Philosopher's Stone | ilevel=165
@@ -195,6 +487,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=37, agility=37, intellect=37, versatility_rating=64
+base_for_spec: strength=37, agility=37, intellect=37, versatility_rating=64
+gear_flags: sockets=0, set_id=0, embellishment=0
 
 [23] Gear from Bags / trinket1 / 盘卷牙石
 id=273795 | Coiled Fangstone | ilevel=321
@@ -203,6 +497,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=159, avoidance_rating=61
+base_for_spec: strength=159, avoidance_rating=61
+gear_flags: sockets=0, set_id=0, embellishment=0
 effect: spell_id=1293311 trigger=0 (not included in fixed stats)
 effect: spell_id=1295491 trigger=1 (not included in fixed stats)
 
@@ -213,6 +509,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=145
+base_for_spec: strength=145
+gear_flags: sockets=0, set_id=0, embellishment=0
 effect: spell_id=1250564 trigger=1 (not included in fixed stats)
 
 [25] Gear from Bags / main_hand / 褪色的晨光切斧
@@ -222,6 +520,8 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=58, stamina=1071, mastery_rating=36, versatility_rating=43
+base_for_spec: strength=58, stamina=1071, mastery_rating=36, versatility_rating=43
+gear_flags: sockets=0, set_id=0, embellishment=0
 weapon: axe_2.60speed_111min_232max
 
 [26] Gear from Bags / off_hand / 破法者之盾
@@ -231,5 +531,9 @@ gems: (none)
 enchant: (none)
 socket_bonus: (none)
 total_for_spec: strength=55, stamina=987, intellect=168, crit_rating=32, mastery_rating=45, armor=883
+base_for_spec: strength=55, stamina=987, intellect=168, crit_rating=32, mastery_rating=45, armor=883
+gear_flags: sockets=0, set_id=0, embellishment=0
+
+ENGINE WARNING: Buff 'fury_mid2_4pc_crit' (0) initialized with max_stack < 1 (0). Setting max_stack to 1.
 
 Summary: total=26 resolved=26 failed=0 ilevel_mismatches=0

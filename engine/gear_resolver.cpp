@@ -13,6 +13,9 @@
 #include <filesystem>
 #include <array>
 #include <cmath>
+#ifndef WGM_SIMC_COMMIT
+#define WGM_SIMC_COMMIT "unknown"
+#endif
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -205,7 +208,7 @@ int main(int argc,char** argv) {
       auto eq=body.find('=');if(eq==body.npos)continue;
       auto key=trim(body.substr(0,eq));auto val=trim(body.substr(eq+1));
       auto slot=parse_slot(key);
-      if(slot!=SLOT_INVALID){rows.push_back({comment?source:"equipped",key,val,label,expected});label.clear();expected=0;continue;}
+      if(slot!=SLOT_INVALID){rows.push_back({comment?source:"equipped",key,val,label.empty()?trim(val.substr(0,val.find(','))):label,expected});label.clear();expected=0;continue;}
       if(comment)continue;
       if(key=="level")level=std::stoi(val);
       else if(key=="race")race_name=val;
@@ -265,9 +268,11 @@ int main(int argc,char** argv) {
     if(requested_state!="auto"&&!state_available(player,requested_state))throw std::runtime_error("Selected character state is unavailable for this class/spec/talents");
     reset_with_state(player);
     std::ostringstream out;
-    out<<"SimC Gear Resolver 0.1 | SimC "<<SC_VERSION<<"\nData: "<<dbc::client_data_version_str(false)<<"\nSource: ac0f3a3c7ff9e521137c0ca1760d548330c697f3\nCharacter: "<<name<<" | "<<class_name<<"/"<<spec_name<<" | level="<<level<<"\nExport: "<<version<<"\n";
+    out<<"SimC Gear Resolver 0.1 | SimC "<<SC_VERSION<<"\nData: "<<dbc::client_data_version_str(false)<<"\nSource: "<<WGM_SIMC_COMMIT<<"\nCharacter: "<<name<<" | "<<class_name<<"/"<<spec_name<<" | level="<<level<<"\nExport: "<<version<<"\n";
     out<<"Scope: un-geared character stats with selected permanent talents and personal state; item fixed stats. No combat, temporary buffs, set bonuses or proc averages.\n";
     out<<"Context: race="<<race_name<<" | talents="<<talents<<"\n";
+    const auto* mastery=player->find_mastery_spell(player->specialization());
+    if(mastery->ok())out<<"mastery_reference: spell="<<mastery->id()<<" | name="<<mastery->name_cstr()<<" | coefficient="<<100*mastery->effectN(1).mastery_value()<<"\n";
     out<<"State: requested="<<requested_state<<" | active="<<selected_state(player,requested_state)<<" | available=none";
     for(const auto& state:state_names(player))if(state_available(player,state))out<<"/"<<state;
     out<<"\n";

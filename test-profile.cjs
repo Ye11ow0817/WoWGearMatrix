@@ -21,7 +21,7 @@ assert.equal(elemental.basePercents.versatility,0,'Naked import must not include
 const seer=elemental.traits.find(t=>t.id===136561);
 assert.equal(seer.multiplier.main,1.03);
 assert.equal(seer.enabled,false);
-assert.deepEqual(initial.attributeContext,{class:'warrior',spec:'arms',level:90,race:'night_elf',talents:sample.match(/^talents=(.*)$/m)[1],dataVersion:'12.1.0.69814'});
+assert.deepEqual(initial.attributeContext,{class:'warrior',spec:'arms',level:90,race:'night_elf',talents:sample.match(/^talents=(.*)$/m)[1],dataVersion:require('./engine/manifest.json').gameData});
 assert.equal(initial.rawStats.main,618);
 assert.equal(initial.rawStats.stamina,4600);
 assert.equal(initial.baseStats.stamina,5060);

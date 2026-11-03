@@ -7,7 +7,7 @@
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
-    "test": "node --test test-character-state.cjs test-fast-profile.cjs test-combinations.cjs test-filter-defaults.cjs test-gear-v3.cjs test-gear-v4.cjs test-import-default.cjs test-model.cjs test-presets.cjs test-profile.cjs test-rating-formula.cjs test-search.cjs test-selection.cjs test-slots.cjs test-custom-tags.cjs",
+    "test": "node --test test-character-state.cjs test-fast-profile.cjs test-combinations.cjs test-filter-defaults.cjs test-gear-v3.cjs test-gear-v4.cjs test-import-default.cjs test-item-names.cjs test-model.cjs test-presets.cjs test-profile.cjs test-rating-formula.cjs test-search.cjs test-selection.cjs test-slots.cjs test-custom-tags.cjs",
     "dist:win": "node build-portable.cjs",
     "postinstall": "node node_modules/electron/install.js"
   },
@@ -27,6 +27,8 @@
       "main.cjs",
       "preload.cjs",
       "worker.cjs",
+      "data/item-names.json",
+      "data/item-names.source.json",
       "storage.cjs",
       "index.html",
       "style.css",

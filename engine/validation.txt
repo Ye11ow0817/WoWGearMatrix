@@ -1,4 +1,11 @@
+Validated 2026-10-27
+SimC midnight: 426ad85ecb1c5d9a1af166931478dabf29b42fdd
+Game data: 12.1.5.70575; hotfix: 2026-10-24
+Compiler: Emscripten 3.1.8-git, C++17, O1; 175 sources rebuilt
+
+node engine/test.cjs: 10 tests passed
 PASS sample: all 26 items, correct slots and all item levels match
+PASS only the Embellished equip-limit category counts as an embellishment
 PASS same item ID with different bonuses remains two separate candidates
 PASS removing gem and enchant leaves base stats unchanged
 PASS unknown item fails explicitly and does not prevent valid items
@@ -8,4 +15,28 @@ PASS bad input returns a nonzero status
 PASS different export version produces an explicit warning
 PASS UTF-8 BOM, CRLF and Unicode file paths
 
-9 tests passed.
+npm.cmd test: 16 test files passed, 0 failed
+Includes dictionary integrity and real WASM checks for:
+Chinese dictionary name > original SimC name > SimC database English name.
+English-only dictionary entries and missing IDs preserve the fallback order.
+
+Electron test-engine-update-ui.cjs: passed
+Validated worker JSON loading, all three name priorities, displayed cards,
+saved character names and data version using isolated temporary user data.
+Ran on the host with --disable-gpu; the automation sandbox could not start
+Electron renderer/GPU subprocesses (0xc0000135).
+
+Generated reference data: 40 profiles, 26 races, 40 mastery references,
+7 rating tables with 90 levels each; all use the updated SimC snapshot.
+All generated talent spell IDs have existing Chinese names.
+49 gem/enchant presets compared with the new WASM: 0 differences.
+
+Chrome Web Store extension: 0.2.4, 175747 item IDs, original JSON preserved.
+Current SimC item database: 115634 IDs; 115319 Chinese names,
+315 English-only dictionary entries, 0 missing IDs.
+
+PASS all four artifact SHA256 values match manifest.json
+PASS source ZIP integrity; all 594 archived files match the source snapshot
+PASS git diff --check
+
+No in-game comparison or Windows EXE rebuild was performed.

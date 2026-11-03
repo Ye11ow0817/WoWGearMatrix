@@ -2,6 +2,7 @@ node_modules/
 dist/
 build-wasm/
 engine/simc-source/
+engine/__pycache__/
 
 .env
 .env.*

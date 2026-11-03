@@ -1,4 +1,4 @@
-"""Build the pinned SimC adapter using Emscripten. No Node native modules needed."""
+"""Build a pinned SimC source snapshot and the local adapter using Emscripten."""
 from pathlib import Path
 import argparse, concurrent.futures as cf, json, os, re, subprocess, sys
 from patch_simc import patch
@@ -10,7 +10,10 @@ def main():
     ap.add_argument('--em-config',help='Optional .emscripten configuration path')
     ap.add_argument('--jobs',type=int,default=4)
     ap.add_argument('--build-dir',type=Path,default=Path('build-wasm'))
-    a=ap.parse_args();src=a.source.resolve();out=Path(__file__).resolve().parent;obj=a.build_dir.resolve();obj.mkdir(parents=True,exist_ok=True)
+    ap.add_argument('--output-dir',type=Path,default=Path(__file__).resolve().parent)
+    a=ap.parse_args();src=a.source.resolve();out=a.output_dir.resolve();obj=a.build_dir.resolve();obj.mkdir(parents=True,exist_ok=True);out.mkdir(parents=True,exist_ok=True)
+    commit=(src/'UPSTREAM_COMMIT').read_text(encoding='ascii').strip()
+    if not re.fullmatch(r'[0-9a-f]{40}',commit):raise ValueError('UPSTREAM_COMMIT must contain the full upstream commit hash')
     env=os.environ.copy()
     if a.em_config:env['EM_CONFIG']=str(Path(a.em_config).resolve())
     em=([sys.executable,a.emxx] if a.emxx.endswith('.py') else [a.emxx])
@@ -18,15 +21,16 @@ def main():
     nums=re.search(r'(\d+)\.(\d+)\.(\d+)',version)
     old=nums and tuple(map(int,nums.groups()))<(3,1,27)
     patch(src)
-    flags=['-std=c++17','-O1','-fexceptions','-DSC_NO_NETWORKING','-DSC_NO_THREADING','-DSC_USE_PTR=0',*[f'-I{src / "engine" / p}' for p in ('','lib','include')]]
+    flags=['-std=c++17','-O1','-fexceptions','-DSC_NO_NETWORKING','-DSC_NO_THREADING','-DSC_USE_PTR=0',f'-DWGM_SIMC_COMMIT="{commit}"',*[f'-I{src / "engine" / p}' for p in ('','lib','include')]]
     files=[src/'engine'/s for s in (src/'source_files/cmake_engine.txt').read_text().splitlines() if s.endswith('.cpp')]
-    files.append(out/'gear_resolver.cpp')
+    files.append(Path(__file__).resolve().parent/'gear_resolver.cpp')
     def compile(p):
         name=str(p.relative_to(src)).replace('\\','_').replace('/','_') if p.is_relative_to(src) else 'gear_resolver.cpp'
         target=obj/(name+'.o')
         # Rebuild every source to account for header and compiler changes.
         r=subprocess.run(em+flags+['-c',str(p),'-o',str(target)],env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,encoding='utf-8',errors='replace')
         if r.returncode:raise RuntimeError(str(p)+'\n'+r.stdout)
+        print('Compiled',p.name,flush=True)
         return target
     print('Compiling',len(files),'sources',flush=True)
     with cf.ThreadPoolExecutor(max_workers=a.jobs) as pool:targets=list(pool.map(compile,files))

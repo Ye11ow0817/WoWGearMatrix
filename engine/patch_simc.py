@@ -1,4 +1,4 @@
-"""Minimal no-threading build fixes for pinned SimC ac0f3a3c. No item formulas changed."""
+"""Idempotent compatibility patches for the stat-only, no-threading WASM build."""
 from pathlib import Path
 import sys
 

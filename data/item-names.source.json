@@ -1,0 +1,13 @@
+{
+  "extensionId": "adnbmnecjmhfgapdmibbhoopibpbaoia",
+  "extensionVersion": "0.2.4",
+  "source": "chrome-web-store",
+  "storeUrl": "https://chromewebstore.google.com/detail/raidbots-%E8%A3%85%E5%A4%87%E4%B8%AD%E6%96%87%E7%BF%BB%E8%AF%91/adnbmnecjmhfgapdmibbhoopibpbaoia",
+  "downloadUrl": "https://clients2.google.com/service/update2/crx?response=redirect&prodversion=142.0.0.0&acceptformat=crx2,crx3&x=id%3Dadnbmnecjmhfgapdmibbhoopibpbaoia%26uc",
+  "retrievedAt": "2026-10-27T04:13:25+00:00",
+  "sha256": "7754fed4dc42b1165c0ec3b2e2c87b8593948f5a22851ea7c6d93d25f2a6edff",
+  "bytes": 12304496,
+  "uniqueItemIds": 175747,
+  "format": "Unmodified extension data/item-names.json; only byId is used for item display names",
+  "license": "No explicit redistribution license found in the extension package or linked source repository"
+}

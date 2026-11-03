@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict'),M=require('../../src/shared/model.js');
+const s=M.newState(),c=s.characters[0];c.baseStats={main:100,crit:0,haste:0,mastery:0,versatility:0};const gem=c.items.find(i=>i.slot==='gem');gem.selected=true;
+assert.equal(c.alwaysUseDiamond,true);c.alwaysUseDiamond=false;assert.doesNotThrow(()=>M.validateState(s));c.alwaysUseDiamond='yes';assert.throws(()=>M.validateState(s),/钻石始终使用/);c.alwaysUseDiamond=true;
+const diamond=c.items.find(i=>i.slot==='gem'&&i.uniqueGroup),otherDiamond=c.items.find(i=>i!==diamond&&i.uniqueGroup===diamond.uniqueGroup);M.toggleSelected(c,diamond);assert.equal(diamond.selected,true);M.toggleSelected(c,otherDiamond);assert.equal(diamond.selected,true);assert.equal(otherDiamond.selected,true);M.toggleSelected(c,otherDiamond);assert.equal(otherDiamond.selected,false);
+diamond.selected=true;diamond.locked=true;c.diamondLockInitialized=true;M.validateState(s);assert.equal(diamond.locked,undefined);assert.equal(c.diamondLockInitialized,undefined);M.toggleSelected(c,diamond);
+const custom={id:M.id(),slot:'head',origin:'custom',source:'custom',name:'测试头盔',ilevel:1,mainType:'strength',selected:true,stats:Object.fromEntries(M.itemStats.map(([key])=>[key,0])),socket:false,embellishment:false,set:false};
+M.upsert(c,custom);assert.throws(()=>M.upsert(c,{...custom,id:M.id(),name:' 测试头盔 '}),/同名/);
+assert.throws(()=>M.upsert(c,{...custom,id:M.id(),name:'测试头盔'}),/同名/);
+assert.doesNotThrow(()=>M.upsert(c,{...custom,id:M.id(),slot:'neck'}));
+assert.doesNotThrow(()=>M.upsert(c,{...custom,name:'改名头盔'}));
+assert.throws(()=>M.removeCustomItem(c,gem.id),/只能删除/);
+M.removeCustomItem(c,custom.id);assert(!c.items.some(i=>i.id===custom.id));
+const second=M.newCharacter('第二个');s.characters.push(second);s.activeId=second.id;M.closeCharacter(s,c.id);assert(M.reopenCharacter(s));assert.equal(s.activeId,c.id);assert.equal(c.baseStats.main,100);assert.equal(c.items.find(i=>i.id===gem.id).selected,true);
+M.closeCharacter(s,c.id);M.closeCharacter(s,second.id);assert.equal(s.characters.length,1);assert.equal(M.baseline(s.characters[0]),null);assert.doesNotThrow(()=>M.validateState(s));
+console.log('PASS: candidate selection, base stats and character close/reopen isolation.');

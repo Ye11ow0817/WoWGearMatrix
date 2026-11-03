@@ -1,8 +1,8 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const {spawnSync}=require('node:child_process');
-const M=require('../model.js');
-const runner=path.join(__dirname,'run.cjs');
+const M=require('../src/shared/model.js');
+const runner=path.join(__dirname,'./run.cjs');
 function parse(cls,spec,race='human'){
   const input=`${cls}="Catalog"\nlevel=90\nrace=${race}\nspec=${spec}\n# wgm_discover_traits=1\n`;
   const run=spawnSync(process.execPath,[runner,'-'],{input,encoding:'utf8',timeout:60000,maxBuffer:16*1024*1024});
@@ -29,7 +29,7 @@ for(const race of Object.values(M.raceGroups).flatMap(group=>Object.keys(group))
 }
 const catalog={profiles,races};
 const source=`(function(root){'use strict';const catalog=${JSON.stringify(catalog)};if(typeof module!=='undefined')module.exports=catalog;else root.ProfileCatalog=catalog;})(globalThis);\n`;
-fs.writeFileSync(path.join(__dirname,'..','profile-catalog.js'),source);
+fs.writeFileSync(path.join(__dirname,'../src/shared/data/profile-catalog.js'),source);
 const version=Object.values(profiles)[0].dataVersion;
-fs.writeFileSync(path.join(__dirname,'..','mastery-data.js'),`// Mastery spell and first-effect coefficient by class/spec from bundled SimC ${version}.\n(function(root){const data=${JSON.stringify(masteries)};if(typeof module!=='undefined')module.exports=data;else root.MasteryData=data;})(globalThis);\n`);
+fs.writeFileSync(path.join(__dirname,'../src/shared/data/mastery-data.js'),`// Mastery spell and first-effect coefficient by class/spec from bundled SimC ${version}.\n(function(root){const data=${JSON.stringify(masteries)};if(typeof module!=='undefined')module.exports=data;else root.MasteryData=data;})(globalThis);\n`);
 console.log(`Saved ${Object.keys(profiles).length} profiles and ${Object.keys(races).length} races.`);

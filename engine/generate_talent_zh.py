@@ -9,7 +9,7 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 profiles = json.loads(subprocess.check_output([
-    'node', '-e', "const m=require('./model.js');console.log(JSON.stringify(Object.entries(m.classes).flatMap(([c,s])=>s.map(x=>[c,x]))))"
+    'node', '-e', "const m=require('./src/shared/model.js');console.log(JSON.stringify(Object.entries(m.classes).flatMap(([c,s])=>s.map(x=>[c,x]))))"
 ], cwd=ROOT, text=True, encoding='utf-8'))
 
 def discover(profile):
@@ -57,7 +57,7 @@ with ThreadPoolExecutor(max_workers=6) as pool:
         elif error:
             print('Name unavailable:', spell, error, file=sys.stderr)
 
-target = ROOT / 'talent-zh.js'
+target = ROOT / 'src/shared/data/talent-zh.js'
 target.write_text('// Chinese talent names verified against Wowhead CN by spell ID.\n'
                   'window.TalentZh = ' + json.dumps(names, ensure_ascii=False, sort_keys=True,
                                                     separators=(',', ':')) + ';\n', encoding='utf-8')

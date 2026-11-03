@@ -12,9 +12,9 @@
 
 读取游戏内 `/simc` 导出文本，输出逐件装备属性的纯文本报告。运行时不联网、不上传角色信息、不进行战斗模拟。
 
-`generate_talent_zh.py` 可在更新 SimC 数据后重新探测各职业专精中影响基础属性的天赋，并从 Wowhead CN 法术页生成 `talent-zh.js`。这是开发时的生成步骤；应用运行时使用随包中文名称，不访问网络。尚无已核对中文名称时界面保留 SimC 英文原名。
+`generate_talent_zh.py` 可在更新 SimC 数据后重新探测各职业专精中影响基础属性的天赋，并从 Wowhead CN 法术页生成 `src/shared/data/talent-zh.js`（相对于项目根目录）。这是开发时的生成步骤；应用运行时使用随包中文名称，不访问网络。尚无已核对中文名称时界面保留 SimC 英文原名。
 
-`node engine/generate_profile_catalog.cjs` 根据随包 WASM 生成 `profile-catalog.js` 和 `mastery-data.js`，包含满级时 40 个职业/专精的天赋、基础倍率与精通系数、26 个种族的原始主属性及属性倍率。`python engine/generate_rating_data.py --source engine/simc-source` 从同份源码生成 `rating-data.js`。可选天赋使用 SimC 当前数据中的满级点数，导入时保留实际点数。用户更改角色选项时只更新内部参考值，不重算或覆盖输入框中的脱装面板值。
+在项目根目录执行 `node engine/generate_profile_catalog.cjs`，根据随包 WASM 生成 `src/shared/data/profile-catalog.js` 和 `src/shared/data/mastery-data.js`，包含满级时 40 个职业/专精的天赋、基础倍率与精通系数、26 个种族的原始主属性及属性倍率。`python engine/generate_rating_data.py --source engine/simc-source` 从同份源码生成 `src/shared/data/rating-data.js`。可选天赋使用 SimC 当前数据中的满级点数，导入时保留实际点数。用户更改角色选项时通过快速 SimC 路径重算基础属性，保留手动编辑产生的增幅前修正量；显示值随新选项和倍率更新。
 
 装备显示名称按以下顺序选择：`data/item-names.json` 中按物品 ID 查询到的中文名、导出字符串的名称（`# 名称 (装等)` 注释，或装备行逗号前的名称）、SimC 数据库英文名称。字典中仍为英文的占位项不会覆盖导出名称。中文词库保持 Chrome 扩展的完整原始 JSON 格式，独立于 WASM，应用运行时不联网。
 
@@ -27,7 +27,7 @@
 需要 Node.js；本次验证使用 Windows x64、Node.js 22.16.0。进入本目录后运行：
 
 ```powershell
-node run.cjs sample.simc sample-result.txt
+node run.cjs ../tests/fixtures/sample.simc "$env:TEMP/wowgearmatrix-sample-result.txt"
 ```
 
 解析自己的导出文件（支持中文路径）：
@@ -74,13 +74,13 @@ node run.cjs "C:\Users\Administrator\Desktop\Simulationcraft导出字符串.txt"
 
 提供的样例：16 件身上装备 + 10 件背包装备，26 件均解析成功，计算装等与全部 26 条注释一致。
 
-回归检查覆盖槽位别名、同 ID 不同 bonus、移除宝石附魔、未知物品和 bonus、错误输入、版本警告、中文路径及 BOM/CRLF：
+回归检查覆盖槽位别名、同 ID 不同 bonus、移除宝石附魔、未知物品和 bonus、错误输入、版本警告、中文路径及 BOM/CRLF。在项目根目录运行：
 
 ```powershell
-node test.cjs
+npm.cmd run test:engine
 ```
 
-2026-10-27 更新后，10 项引擎检查与根目录的 16 个测试文件全部通过；`test-engine-update-ui.cjs` 已验证实际导入、三层名称回退、装备卡片显示和角色保存。完整记录见 `validation.txt`。
+2026-10-27 更新后，10 项引擎检查与当时根目录的 16 个测试文件全部通过；`test-engine-update-ui.cjs` 已验证实际导入、三层名称回退、装备卡片显示和角色保存。历史记录见 [validation.txt](../docs/validation/validation.txt)。测试现分别位于 `tests/engine`、`tests/unit` 与 `tests/electron`。
 
 **验证边界：这些检查证明程序运行、样例覆盖、装等一致和部分属性变化逻辑。未进入 WoW 对照逐件属性截图，不能把它当作已逐项完成游戏内数值验收。**
 
@@ -118,7 +118,7 @@ SimC 和本适配器按 GPL-3.0-or-later 提供；上游第三方组件保留各
 
 状态、可用选项和实际生效状态随角色保存；界面在“影响属性的天赋、被动”下勾选姿态与形态，互斥选项最多勾选一项；天赋按法术被动标记分组。切换状态及天赋会更新基础属性。原有角色须选择一次状态或重新导入。加速栏仍表示加速等级贡献，不表示包含猎豹形态等效果的完整移动速度。
 
-验证：`node test-character-state.cjs`；Electron 交互脚本：`test-character-state-ui.cjs`。
+在项目根目录验证：`node tests/unit/test-character-state.cjs`；Electron 交互测试：`npm.cmd run test:electron -- test-character-state-ui.cjs`。
 
 ## 基础属性快速更新
 
@@ -126,4 +126,4 @@ SimC 和本适配器按 GPL-3.0-or-later 提供；上游第三方组件保留各
 
 天赋说明展示所选点数的法术原始数值，不使用开关前后的面板百分比差值。例如地精的 1% 急速与 2% 狂野打击相乘，面板急速是 3.02%，但狂野打击说明仍为 `+2%急速`。特殊精通倍率、形态绑定加成及非第一法术效果使用对应的说明。
 
-验证：`node test-fast-profile.cjs` 对照完整/快速 SimC 输出，并检查中文名称覆盖与法术数值；`test-character-state-ui.cjs` 覆盖勾选、重新导入、重启与重复选择缓存耗时。
+验证：`node tests/unit/test-fast-profile.cjs` 对照完整/快速 SimC 输出，并检查中文名称覆盖与法术数值；`tests/electron/test-character-state-ui.cjs` 覆盖勾选、重新导入、重启与重复选择缓存耗时。

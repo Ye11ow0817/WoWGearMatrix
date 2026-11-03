@@ -27,7 +27,7 @@ def main():
     output = (f'// SimC {version}: __combat_ratings, levels 1-{table[1]}. Rating per 1% or 1 mastery point.\n'
               '(function(root){const data=' + json.dumps(data, separators=(',', ':')) +
               ";if(typeof module!=='undefined')module.exports=data;else root.RatingData=data;})(globalThis);\n")
-    (Path(__file__).resolve().parents[1] / 'rating-data.js').write_text(output, encoding='utf8')
+    (Path(__file__).resolve().parents[1] / 'src/shared/data/rating-data.js').write_text(output, encoding='utf8')
     print(f'Generated {len(data)} rating tables for {table[1]} levels from {version}')
 
 

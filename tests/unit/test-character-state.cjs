@@ -1,0 +1,46 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),{spawnSync}=require('node:child_process');
+const M=require('../../src/shared/model.js'),R=require('../../src/shared/rating.js');
+const sample=fs.readFileSync(path.join(__dirname,'../fixtures/sample.simc'),'utf8');
+function parse(input,state,discover=false){
+ const r=spawnSync(process.execPath,[path.join(__dirname,'../../engine/run.cjs'),'-'],{input:input+'\n# wgm_state='+state+'\n'+(discover?'# wgm_discover_traits=1\n':''),encoding:'utf8',timeout:60000,maxBuffer:16e6});
+ assert.equal(r.status,0,(r.stderr||'').slice(-1200)+(r.stdout||'').slice(-1200));
+ return M.parseReport(r.stdout);
+}
+const none=parse(sample,'none'),battle=parse(sample,'battle_stance'),defense=parse(sample,'defensive_stance');
+assert.equal(battle.basePercents.crit-none.basePercents.crit,3);
+assert.equal(defense.basePercents.crit,none.basePercents.crit);
+assert.equal(R.toSheetPercent(battle,'crit',1260).toFixed(2),'37.39');
+assert.equal(battle.basePercents.versatility,0);
+assert.equal(battle.activeCharacterState,'battle_stance');
+assert.equal(parse(sample,'auto').activeCharacterState,'battle_stance');
+const druid='druid="State"\nlevel=90\nrace=night_elf\nspec=guardian\n';
+const humanoid=parse(druid,'none'),bear=parse(druid,'bear_form'),cat=parse(druid,'cat_form');
+assert(bear.baseStats.stamina>humanoid.baseStats.stamina);
+assert(bear.attributeFactors.armor>humanoid.attributeFactors.armor);
+assert.equal(cat.baseStats.stamina,humanoid.baseStats.stamina);
+assert.equal(cat.activeCharacterState,'cat_form'); // Speed rating is separate from form movement speed.
+const vigor=parse(druid+'# wgm_enable_traits=123793\n','bear_form');
+assert.equal(vigor.baseStats.stamina,bear.baseStats.stamina,'exclude temporary Ursine Vigor stamina');
+assert.equal(vigor.attributeFactors.armor,bear.attributeFactors.armor,'exclude temporary Ursine Vigor armor');
+const lycaraInput=druid+'# wgm_enable_traits=103311\n';
+const lycaraCat=parse(lycaraInput,'cat_form'),lycaraBear=parse(lycaraInput,'bear_form');
+assert(lycaraCat.basePercents.crit>cat.basePercents.crit);
+assert(lycaraBear.basePercents.versatility>bear.basePercents.versatility);
+assert.equal(bear.basePercents.versatility,0);
+const state=M.newState(),c=state.characters[0];
+M.applyImport(c,none,'');
+c.items.find(i=>i.slot==='finger').locked=true;
+const before=JSON.stringify(c.items);
+M.applyCharacterState(c,battle);
+assert.equal(JSON.stringify(c.items),before,'state changes preserve all equipment and selections');
+assert.equal(c.basePercents.crit,battle.basePercents.crit);
+M.validateState(state);
+assert.equal(M.validateState(JSON.parse(JSON.stringify(state))).characters[0].characterState,'battle_stance');
+const prepared=M.prepareProfileInput(sample+'\n# wgm_state=none\n',{class:'warrior',spec:'arms',race:'night_elf',disabledTraits:[],characterState:'battle_stance'});
+assert.equal((prepared.match(/^# wgm_state=/gm)||[]).length,1);
+assert(prepared.includes('# wgm_state=battle_stance'));
+assert.throws(()=>M.prepareProfileInput(sample,{class:'mage',spec:'fire',race:'human',disabledTraits:[],characterState:'bear_form'}));
+const invalid=spawnSync(process.execPath,[path.join(__dirname,'../../engine/run.cjs'),'-'],{input:druid+'# wgm_state=battle_stance\n',encoding:'utf8',timeout:30000});
+assert.equal(invalid.status,1);
+console.log('Character state regression passed: Arms 37.39%, stance switching, bear/cat attributes, no raid buffs, persistence and equipment preservation.');

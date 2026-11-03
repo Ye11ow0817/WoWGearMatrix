@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),M=require('../../src/shared/model.js');const s=M.newState(),c=s.characters[0];
+const make=(slot,position)=>({id:M.id(),name:'item',itemId:42,slot,position,origin:'import',ilevel:300,mainType:'strength',stats:{main:100,crit:0,haste:0,mastery:0,versatility:0},socket:true,socketCount:2,embellishment:false,set:false});
+c.baseStats={main:100,crit:20,haste:30,mastery:40,versatility:50};const base={...c.baseStats};
+const result={name:'Test',items:[make('head',1),make('head',0),make('finger',1),make('finger',2)],mainType:'strength',attributeContext:{class:'warrior',spec:'arms',level:90},skipped:0,failed:0};
+M.attachEquippedGems(result,'head=,id=42,gem_id=240890/240890/0\n# head=,id=42,gem_id=240983');M.applyImport(c,result,'');
+assert.deepEqual(c.items.filter(i=>i.origin==='import').map(i=>i.selected),[true,false,true,true]);assert(c.items.every(i=>!('position'in i)&&!('equippedCount'in i)));assert.deepEqual(c.baseStats,base);
+assert(c.items.find(i=>i.presetId==='240890').selected);assert.equal(c.items.find(i=>i.presetId==='240983').selected,false);assert.equal(c.items.filter(i=>i.slot==='gem'&&i.selected).length,1);
+M.applyImport(c,result,'');assert.deepEqual(c.baseStats,base);M.applyImport(c,{...result,attributeContext:{...result.attributeContext,spec:'fury'}},'');assert.equal(M.baseline(c),null);M.validateState(s);
+const alias=Object.keys(M.presets.aliases)[0],target=M.presets.aliases[alias];M.applyImport(c,{...result,equippedGems:[Number(alias)]},'');assert(c.items.find(i=>i.presetId===target).selected);
+console.log('PASS: equipped import defaults become candidates only; bag gems excluded; repeat import preserves baseline; changed spec resets baseline.');

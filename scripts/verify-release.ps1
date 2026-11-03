@@ -3,8 +3,8 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 if (!$ExePath) {
     $latestRelease = Get-ChildItem -LiteralPath (Join-Path $projectRoot 'dist') -File |
-        Where-Object Name -Match '^WoWGearMatrix-\d{8}-win-x64\.exe$' |
-        Sort-Object Name -Descending | Select-Object -First 1
+        Where-Object Name -Match '^WoWGearMatrix-\d+\.\d+\.\d+-\d{8}-win-x64-portable\.exe$' |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1
     if (!$latestRelease) { throw 'No timestamped release found in dist' }
     $ExePath = $latestRelease.FullName
 }

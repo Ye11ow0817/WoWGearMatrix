@@ -1,6 +1,6 @@
 {
   "name": "wowgearmatrix",
-  "version": "0.3.3",
+  "version": "1.0.0",
   "private": true,
   "description": "WoWGearMatrix - 魔兽世界配装工具",
   "license": "GPL-3.0-or-later",
@@ -52,7 +52,7 @@
       "icon": "build/icon.ico"
     },
     "portable": {
-      "artifactName": "WoWGearMatrix-${env.WOWGEARMATRIX_BUILD_TIMESTAMP}-win-x64.exe"
+      "artifactName": "WoWGearMatrix-${version}-${env.WOWGEARMATRIX_BUILD_TIMESTAMP}-win-x64-portable.exe"
     },
     "electronLanguages": [
       "en-US"

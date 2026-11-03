@@ -32,6 +32,7 @@ try {
 }
 & npm.cmd test
 if ($LASTEXITCODE -ne 0) { throw 'Tests failed' }
+$appVersion = (Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw | ConvertFrom-Json).version
 $buildTimestamp = Get-Date -Format 'yyyyMMdd'
 $previousBuildTimestamp = $env:WOWGEARMATRIX_BUILD_TIMESTAMP
 try {
@@ -41,7 +42,7 @@ try {
 } finally {
     $env:WOWGEARMATRIX_BUILD_TIMESTAMP = $previousBuildTimestamp
 }
-& (Join-Path $PSScriptRoot 'verify-release.ps1') -ExePath (Join-Path $projectRoot "dist/WoWGearMatrix-$buildTimestamp-win-x64.exe")
+& (Join-Path $PSScriptRoot 'verify-release.ps1') -ExePath (Join-Path $projectRoot "dist/WoWGearMatrix-$appVersion-$buildTimestamp-win-x64-portable.exe")
 $sourceFiles = Get-ChildItem -LiteralPath $projectRoot | Where-Object Name -notin @('node_modules', 'dist', '.git', '.tmp', 'build-wasm', 'build-workspace-test')
-Compress-Archive -LiteralPath $sourceFiles.FullName -DestinationPath (Join-Path $projectRoot "dist/WoWGearMatrix-$buildTimestamp-source.zip") -Force
+Compress-Archive -LiteralPath $sourceFiles.FullName -DestinationPath (Join-Path $projectRoot "dist/WoWGearMatrix-$appVersion-$buildTimestamp-source.zip") -Force
 Write-Host "Release ready: $projectRoot\dist"
